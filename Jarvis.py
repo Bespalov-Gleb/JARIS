@@ -9,7 +9,7 @@ import random
 import struct
 import time
 import traceback
-from ctypes import POINTER, cast
+# from ctypes import POINTER, cast
 import webbrowser
 import googlesearch
 import num2words
@@ -21,19 +21,22 @@ import simpleaudio as sa
 import sounddevice as sd
 import vosk
 import yaml
-from comtypes import CLSCTX_ALL
+#from comtypes import CLSCTX_ALL
 from fuzzywuzzy import fuzz
 from pvrecorder import PvRecorder
-from pycaw.pycaw import (
-    AudioUtilities,
-    IAudioEndpointVolume
-)
+# from pycaw.pycaw import (
+#     AudioUtilities,
+#     IAudioEndpointVolume
+# )
 from rich import print
 from PyQt6 import QtCore, QtWidgets, QtGui
 
 import pyautogui
 import sys
 import requests
+
+from db_pkg.database import Database
+from db_pkg.models import User
 
 
 def start_settings(page: ft.Page):
@@ -44,10 +47,12 @@ def start_settings(page: ft.Page):
     page.window_resizable = False
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
-    openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен OpenAI')
-    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен Picovoice')
+    openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='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')
+    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='JdvXgzi7q3MBNrnANK4PGlT0lbJGdu+I4MHlayW1/ykr2/LAFe3kOw==')
     chrome_pass = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Путь к Chrome')
 
+    db = Database()
+    CDIR = os.getcwd()
     def tts(text):
         headers = {
             "Authorization": f"Bearer {EDEN_TOKEN}"}
@@ -71,13 +76,18 @@ def start_settings(page: ft.Page):
             file.close()
 
     def register(e):
-        db = sqlite3.connect('jarvis.db')
-        cur = db.cursor()
-        cur.execute(f"INSERT INTO users VALUES(NULL, '{user_login.value}', '{user_password.value}', '{openai_user.value}', '{picovoice_user.value}', '{eden_user.value}')")
+        user_to_add = User(
+            id=None,
+            login=user_login.value,
+            password=user_password.value,
+            openai_token=openai_user.value,
+            picovoice_token=picovoice_user.value,
+            eden_token=eden_user.value
+        )
+        db.add(user_to_add)
+
         btn_reg.text = 'Зарегестрировано!'
         page.update()
-        db.commit()
-        db.close()
 
     def validate(e):
         if all([user_login.value, user_password.value, openai_user.value, picovoice_user.value, eden_user.value]):
@@ -98,23 +108,11 @@ def start_settings(page: ft.Page):
         page.update()
 
     def auth_user(e):
-
-        db = sqlite3.connect('jarvis.db')
-        cur = db.cursor()
-
-        cur.execute(f"SELECT * FROM users WHERE login = '{user_login_a.value}' AND password = '{user_password_a.value}'")
-        if cur.fetchone() != None:
-            s = cur.fetchone()
-            ul = s[1]
-            up = s[2]
-            op = s[3]
-            pc = s[4]
-            ed = s[5]
-            OPENAI_TOKEN = op
-            PICOVOICE_TOKEN = pc
-            openai.api_key = OPENAI_TOKEN
+        user = db.get_query(User).filter(User.login == user_login_a.value and User.password == user_password_a.value).first()
+        if user is not None:
+            openai.api_key = user.openai_token
             porcupine = pvporcupine.create(
-                access_key=PICOVOICE_TOKEN,
+                access_key=user.picovoice_token,
                 keywords=['jarvis'],
                 sensitivities=[1]
             )
@@ -131,20 +129,24 @@ def start_settings(page: ft.Page):
                 ], on_change=navigate
             )
             page.add(jarvis_st)
-            cur.execute(
-                f"INSERT INTO users VALUES(-1,'{ul}', '{up}', '{op}', '{pc}', '{ed}' )")
+
+            user_to_add = User(
+                id=-1,
+                login=user.login,
+                password=user.password,
+                openai_token=user.openai_token,
+                picovoice_token=user.picovoice_token,
+                eden_token=user.eden_token
+            )
+            db.add(user_to_add)
 
             page.update()
-            db.commit()
-            db.close()
+
             return recorder, porcupine
         else:
             page.snack_bar = ft.SnackBar(ft.Text('Неверный логин или пароль!'))
             page.snack_bar.open = True
             page.update()
-
-        db.commit()
-        db.close()
 
     def navigate_reg(e):
         index = page.navigation_bar.selected_index
@@ -203,11 +205,10 @@ def start_settings(page: ft.Page):
                 page.update()
 
     def quit_j(e):
-        db = sqlite3.connect('jarvis.db')
-        c = db.cursor()
-        c.execute("""DELETE FROM users WHERE id = -1""")
-        db.commit()
-        db.close()
+        user_to_delete = db.get_query(User).filter(User.id == -1)
+        db.delete(user_to_delete)
+        # c.execute("""DELETE FROM users WHERE id = -1""")
+
         page.clean()
         page.add(panel_auth)
         page.navigation_bar = ft.NavigationBar(
@@ -261,10 +262,10 @@ def start_settings(page: ft.Page):
         height=810,
         alignment=ft.alignment.center_left,
         bgcolor='black',
-        content=(ft.Image(src='qt_material/bg 1000_600.jpg'))
+        content=(ft.Image(src=f'{CDIR}/assets/qt_material/bg 1000_600.jpg'))
     )
 
-    eye_jarvis = ft.Container(ft.Image('qt_material/20240223_151534.gif',
+    eye_jarvis = ft.Container(ft.Image(f'{CDIR}/assets/qt_material/20240223_151534.gif',
                                        height=500, width=500), height=800, width=1000,
                               alignment=ft.alignment.top_center)
 
@@ -319,23 +320,11 @@ def start_settings(page: ft.Page):
     ], alignment=ft.MainAxisAlignment.START), height=800, width=1000, alignment=ft.Alignment(0, -0.3))
     panel_com = list_commands
 
-    db = sqlite3.connect('jarvis.db')
-    cur = db.cursor()
-    cur.execute("""CREATE TABLE IF NOT EXISTS users(
-            id INTEGER PRIMARY KEY,
-            login TEXT,
-            password TEXT,
-            openai_token TEXT,
-            picovoice_token TEXT,
-            eden_token TEXT
-            )""")
-    cur.execute("""SELECT * FROM users WHERE id = -1""")
-    if cur.fetchone() != None:
-        cur.execute("""SELECT openai_token, picovoice_token, eden_token FROM users WHERE id = -1""")
-        s = cur.fetchone()
-        OPENAI_TOKEN = s[0]
-        PICOVOICE_TOKEN = s[1]
-        EDEN_TOKEN = s[2]
+    user = db.get_query(User).filter(User.id == -1).first()
+    if user is not None:
+        OPENAI_TOKEN = user.openai_token
+        PICOVOICE_TOKEN = user.picovoice_token
+        EDEN_TOKEN = user.eden_token
 
         page.add(jarvis_st)
 
@@ -347,7 +336,6 @@ def start_settings(page: ft.Page):
             ], on_change=navigate
         )
         page.update()
-        db.close()
 
     else:
         page.add(panel_register)
@@ -360,7 +348,6 @@ def start_settings(page: ft.Page):
         page.update()
         PICOVOICE_TOKEN = 'start'
         OPENAI_TOKEN = 'start'
-        db.close()
 
     if PICOVOICE_TOKEN != 'start':
         porcupine = pvporcupine.create(
@@ -378,7 +365,6 @@ def start_settings(page: ft.Page):
     VA_ALIAS = ('джарвис',)
     VA_TBR = ('скажи', 'покажи', 'ответь', 'произнеси', 'расскажи', 'сколько', 'слушай')
     MICROPHONE_INDEX = -1
-    CDIR = os.getcwd()
     VA_CMD_LIST = yaml.safe_load(
         open('commands.yaml', 'rt', encoding='utf8'),
     )
@@ -390,7 +376,7 @@ def start_settings(page: ft.Page):
 
     first_request = True
 
-    model = vosk.Model("model_small")
+    model = vosk.Model("assets/model_small")
     samplerate = 16000
     device = -1
     kaldi_rec = vosk.KaldiRecognizer(model, samplerate)
@@ -465,7 +451,7 @@ def start_settings(page: ft.Page):
 
     def play(phrase, wait_done=True):
 
-        filename = f"{CDIR}\\sound\\"
+        filename = fr"{CDIR}/assets/sound/"
 
         if phrase == "greet":  # for py 3.8
             filename += f"greet{random.choice([1, 2, 3])}.wav"
@@ -609,21 +595,21 @@ def start_settings(page: ft.Page):
             webbrowser.open('https://www.google.com/')
             play("ok")
 
-        elif cmd == 'sound_off':
-            play("ok", True)
+        # elif cmd == 'sound_off':
+        #     play("ok", True)
+        #
+        #     devices = AudioUtilities.GetSpeakers()
+        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
+        #     volume.SetMute(1, None)
 
-            devices = AudioUtilities.GetSpeakers()
-            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-            volume = cast(interface, POINTER(IAudioEndpointVolume))
-            volume.SetMute(1, None)
-
-        elif cmd == 'sound_on':
-            devices = AudioUtilities.GetSpeakers()
-            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-            volume = cast(interface, POINTER(IAudioEndpointVolume))
-            volume.SetMute(0, None)
-
-            play("ok")
+        # elif cmd == 'sound_on':
+        #     devices = AudioUtilities.GetSpeakers()
+        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
+        #     volume.SetMute(0, None)
+        #
+        #     play("ok")
 
         elif cmd == 'thanks':
             play("thanks")
@@ -837,8 +823,8 @@ def start_settings(page: ft.Page):
             tts(text=text)
             time.sleep(2.0)
             play('moment_file')
-            os.remove('sound/moment_file.wav')
+            os.remove('assets/sound/moment_file.wav')
             recorder.start()
 
 
-ft.app(target=start_settings, view=ft.WEB_BROWSER)
+ft.app(target=start_settings)
