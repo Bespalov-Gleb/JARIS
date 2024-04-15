@@ -1,6 +1,6 @@
 from sqlalchemy import Integer, String, Column
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 
 Base = declarative_base()
@@ -25,3 +25,5 @@ class User(Base):
     picovoice_token = Column(String, nullable=False)
     eden_token = Column(String, nullable=False)
 
+    def __repr__(self):
+        return f'id: {self.id} login: {self.login}'

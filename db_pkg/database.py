@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, Query
-from models import Base
+from db_pkg.models import Base
 
 
 class Database:
@@ -35,7 +35,6 @@ class Database:
 
     # return corresponded table
     def get_query(self, model) -> Query:
-
         return self.session.query(model)  # query
 
         #  query.all() - вернет всю таблицу в виде list
