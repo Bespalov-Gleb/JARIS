@@ -10,17 +10,23 @@ import openai
 import pvporcupine
 import simpleaudio as sa
 import sounddevice as sd
+import yaml
 from fuzzywuzzy import fuzz
 from pvrecorder import PvRecorder
 from rich import print
 from PyQt6 import QtWidgets
 import sys
+import requests
 
 
 class Jarvis:
-    def __init__(self, picovoice_token):
+    def __init__(self, picovoice_token, eden_token):
         self.picovoice_token = picovoice_token
+        self.eden_token = eden_token
 
+        self.message_log = [{"role": "system", "content": "Ты голосовой ассистент из железного человека."}]
+        self.is_first_request = True
+        self.VA_CMD_LIST = yaml.safe_load(open('commands.yaml', 'rt', encoding='utf8'),)
         self.CDIR = os.getcwd()
         self.porcupine = pvporcupine.create(
             access_key=self.picovoice_token,
@@ -29,50 +35,70 @@ class Jarvis:
         )
         self.recorder = PvRecorder(device_index=-1, frame_length=self.porcupine.frame_length)
 
+    def tts(self, text):
+        headers = {
+            "Authorization": f"Bearer {self.eden_token}"}
+        url = 'https://api.edenai.run/v2/audio/text_to_speech'
+        payload = {
+            "providers": "lovoai", "language": "ru-RU",
+            "option": "MALE",
+            "lovoai": "ru-RU_Pyotr Semenov",
+            "text": f'{text}'
+        }
+        response = requests.post(url, json=payload, headers=headers)
+        result = json.loads(response.text)
+
+        audio_url = result.get('lovoai').get('audio_resource_url')
+        r = requests.get(audio_url)
+        file_name = 'moment_file.wav'
+
+        with open(file_name, 'wb') as file:
+            file.write(r.content)
+            file.close()
+
     def start_jarvis(self, kaldi_rec):
-            self.recorder.start()
-            print('Using device: %s' % self.recorder.selected_device)
+        self.recorder.start()
+        print('Using device: %s' % self.recorder.selected_device)
 
-            print(f"Jarvis (v3.0) начал свою работу ...")
-            self.play('run')
+        print(f"Jarvis (v3.0) начал свою работу ...")
+        self.play('run')
 
-            time.sleep(0.5)
+        time.sleep(0.5)
 
-            ltc = time.time() - 1000
+        ltc = time.time() - 1000
 
-            while True:
-                try:
+        while True:
+            try:
+                pcm = self.recorder.read()
+                keyword_index = self.porcupine.process(pcm)
+
+                if keyword_index >= 0:
+                    self.recorder.stop()
+                    self.play("greet", True)
+                    print("Yes, sir.")
+                    self.recorder.start()  # prevent self-recording
+                    ltc = time.time()
+
+                while time.time() - ltc <= 10:
                     pcm = self.recorder.read()
-                    keyword_index = self.porcupine.process(pcm)
+                    sp = struct.pack("h" * len(pcm), *pcm)
 
-                    if keyword_index >= 0:
-                        self.recorder.stop()
-                        self.play("greet", True)
-                        print("Yes, sir.")
-                        self.recorder.start()  # prevent self-recording
-                        ltc = time.time()
+                    if kaldi_rec.AcceptWaveform(sp):
+                        if self.va_respond(json.loads(kaldi_rec.Result())["text"]):
+                            ltc = time.time()
 
-                    while time.time() - ltc <= 10:
-                        pcm = self.recorder.read()
-                        sp = struct.pack("h" * len(pcm), *pcm)
+                        break
 
-                        if kaldi_rec.AcceptWaveform(sp):
-                            if self.va_respond(json.loads(kaldi_rec.Result())["text"]):
-                                ltc = time.time()
+            except Exception as err:
+                print(f"Unexpected {err=}, {type(err)=}")
+                raise
 
-                            break
-
-                except Exception as err:
-                    print(f"Unexpected {err=}, {type(err)=}")
-                    raise
-
-
-    def gpt_answer(self, message_log):
+    def gpt_answer(self):
         model_engine = "gpt-3.5-turbo"
         max_tokens = 1024  # default 1024
         response = openai.ChatCompletion.create(
             model=model_engine,
-            messages=message_log,
+            messages=self.message_log,
             max_tokens=max_tokens,
             temperature=0.7,
             top_p=1,
@@ -86,7 +112,6 @@ class Jarvis:
 
         # If no response with text is found, return the first response's content (which may be empty)
         return response.choices[0].message.content
-
 
     # self.play(f'{CDIR}\\sound\\ok{random.choice([1, 2, 3, 4])}.wav')
 
@@ -144,24 +169,16 @@ class Jarvis:
             self.recorder.stop()
 
         wave_obj = sa.WaveObject.from_wave_file(filename)
-        self.play_obj = wave_obj.self.play()
+        play_obj = wave_obj.play()
 
         if wait_done:
-            self.play_obj.wait_done()
+            play_obj.wait_done()
             # time.sleep((len(wave_obj.audio_data) / wave_obj.sample_rate) + 0.5)
             # print("END")
             # time.sleep(0.5)
             self.recorder.start()
 
-
-    def q_callback(self, indata, frames, time, status, q):
-        if status:
-            print(status, file=sys.stderr)
-        q.put(bytes(indata))
-
-
-    def va_respond(self, voice: str, VA_CMD_LIST, tts):
-        global self.recorder, message_log, first_request
+    def va_respond(self, voice: str):
         print(f"Распознано: {voice}")
 
         cmd = self.recognize_cmd(self.filter_cmd(voice))
@@ -170,18 +187,18 @@ class Jarvis:
 
         if len(cmd['cmd'].strip()) <= 0:
             return False
-        elif cmd['percent'] < 54 or cmd['cmd'] not in VA_CMD_LIST.keys():
+        elif cmd['percent'] < 54 or cmd['cmd'] not in self.VA_CMD_LIST.keys():
 
             if fuzz.ratio(voice.join(voice.split()[:1]).strip(), "скажи") > 75:
                 self.play('gpt_start')
-                if first_request:
-                    message_log.append({"role": "user", "content": voice})
+                if self.is_first_request:
+                    self.message_log.append({"role": "user", "content": voice})
                     first_request = True
                     response = self.gpt_answer()
-                    message_log.append({"role": "assistant", "content": response})
+                    self.message_log.append({"role": "assistant", "content": response})
                     self.recorder.stop()
                     if len(response) < 1000:
-                        tts(response)
+                        self.tts(response)
                         self.play('moment_file')
                         os.remove('moment_file.wav')
                         time.sleep(0.5)
@@ -200,8 +217,9 @@ class Jarvis:
             self.execute_cmd(cmd['cmd'], voice)
             return True, voice
 
-
-    def filter_cmd(self, raw_voice: str, VA_ALIAS, VA_TBR):
+    def filter_cmd(self, raw_voice: str):
+        VA_ALIAS = ('джарвис',)
+        VA_TBR = ('скажи', 'покажи', 'ответь', 'произнеси', 'расскажи', 'сколько', 'слушай')
         cmd = raw_voice
 
         for x in VA_ALIAS:
@@ -212,10 +230,9 @@ class Jarvis:
 
         return cmd
 
-
-    def recognize_cmd(self, cmd: str, VA_CMD_LIST):
+    def recognize_cmd(self, cmd: str):
         rc = {'cmd': '', 'percent': 0}
-        for c, v in VA_CMD_LIST.items():
+        for c, v in self.VA_CMD_LIST.items():
 
             for x in v:
                 vrt = fuzz.ratio(cmd, x)
@@ -224,7 +241,6 @@ class Jarvis:
                     rc['percent'] = vrt
 
         return rc
-
 
     def execute_cmd(self, cmd: str, voice: str):
         if cmd == 'open_browser':
