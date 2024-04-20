@@ -5,14 +5,19 @@ import struct
 import time
 import traceback
 import webbrowser
+from ctypes import POINTER, cast
+
 import googlesearch
 import openai
 import pvporcupine
 import simpleaudio as sa
 import sounddevice as sd
 import yaml
+from comtypes import CLSCTX_ALL
 from fuzzywuzzy import fuzz
 from pvrecorder import PvRecorder
+from pycaw.api.endpointvolume import IAudioEndpointVolume
+from pycaw.utils import AudioUtilities
 from rich import print
 from PyQt6 import QtWidgets
 import sys
@@ -79,7 +84,7 @@ class Jarvis:
                     self.recorder.start()  # prevent self-recording
                     ltc = time.time()
 
-                while time.time() - ltc <= 10:
+                while time.time() - ltc <= 3:
                     pcm = self.recorder.read()
                     sp = struct.pack("h" * len(pcm), *pcm)
 
@@ -255,21 +260,21 @@ class Jarvis:
             webbrowser.open('https://www.google.com/')
             self.play("ok")
 
-        # elif cmd == 'sound_off':
-        #     self.play("ok", True)
-        #
-        #     devices = AudioUtilities.GetSpeakers()
-        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
-        #     volume.SetMute(1, None)
+        elif cmd == 'sound_off':
+            self.play("ok", True)
 
-        # elif cmd == 'sound_on':
-        #     devices = AudioUtilities.GetSpeakers()
-        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
-        #     volume.SetMute(0, None)
-        #
-        #     self.play("ok")
+            devices = AudioUtilities.GetSpeakers()
+            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            volume = cast(interface, POINTER(IAudioEndpointVolume))
+            volume.SetMute(1, None)
+
+        elif cmd == 'sound_on':
+            devices = AudioUtilities.GetSpeakers()
+            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            volume = cast(interface, POINTER(IAudioEndpointVolume))
+            volume.SetMute(0, None)
+
+            self.play("ok")
 
         elif cmd == 'thanks':
             self.play("thanks")
@@ -321,6 +326,9 @@ class Jarvis:
 
         elif cmd == 'off':
             self.play("off", True)
+            # flet.exe
+            close = "taskkill /IM flet.exe"
+            os.system(close)
 
             self.porcupine.delete()
             exit(0)
