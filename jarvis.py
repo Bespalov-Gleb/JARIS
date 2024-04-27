@@ -6,9 +6,10 @@ import time
 import traceback
 import webbrowser
 from ctypes import POINTER, cast
+import multiprocessing
 
+import g4f
 import googlesearch
-import openai
 import pvporcupine
 import simpleaudio as sa
 import sounddevice as sd
@@ -84,7 +85,7 @@ class Jarvis:
                     self.recorder.start()  # prevent self-recording
                     ltc = time.time()
 
-                while time.time() - ltc <= 3:
+                while time.time() - ltc <= 4:
                     pcm = self.recorder.read()
                     sp = struct.pack("h" * len(pcm), *pcm)
 
@@ -99,24 +100,19 @@ class Jarvis:
                 raise
 
     def gpt_answer(self):
-        model_engine = "gpt-3.5-turbo"
-        max_tokens = 1024  # default 1024
-        response = openai.ChatCompletion.create(
-            model=model_engine,
-            messages=self.message_log,
-            max_tokens=max_tokens,
-            temperature=0.7,
-            top_p=1,
-            stop=None
+        res = ''
+        response = g4f.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            provider=g4f.Provider.Feedough,
+            messages=[{"role": "user", "content": 'Ты образовательный голосовой помощник'}],
+            stream=True,
+
         )
+        for mes in response:
+            res += mes
+        return res
 
-        # Find the first response from the chatbot that has text in it (some responses may not have text)
-        for choice in response.choices:
-            if "text" in choice:
-                return choice.text
 
-        # If no response with text is found, return the first response's content (which may be empty)
-        return response.choices[0].message.content
 
     # self.play(f'{CDIR}\\sound\\ok{random.choice([1, 2, 3, 4])}.wav')
 
@@ -198,12 +194,15 @@ class Jarvis:
                 self.play('gpt_start')
                 if self.is_first_request:
                     self.message_log.append({"role": "user", "content": voice})
-                    first_request = True
+                    self.first_request = True
                     response = self.gpt_answer()
                     self.message_log.append({"role": "assistant", "content": response})
                     self.recorder.stop()
                     if len(response) < 1000:
                         self.tts(response)
+                        # pr_tts = multiprocessing.Process(target=self.tts(response), name='tts')
+                        # pr_tts.start()
+                        # text_gpt = multiprocessing.Process(target=)
                         self.play('moment_file')
                         os.remove('moment_file.wav')
                         time.sleep(0.5)

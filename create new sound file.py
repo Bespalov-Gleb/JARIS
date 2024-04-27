@@ -14,7 +14,7 @@ def tts(text):
         "lovoai": "ru-RU_Pyotr Semenov",
         "text": f'{text}'
     }
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.post(url=url, json=payload, headers=headers)
     result = json.loads(response.text)
     unx = int(time.time())
 
@@ -30,7 +30,7 @@ def tts(text):
 
 
 def main():
-    tts(text='Здравствуйте дорогие друзья! Желаю вам провести этот день с пользой. Хорошего настроения! Скоро увидимся!')
+    tts(text='Ничего не знаю, все работает')
 
 
 if __name__ == '__main__':
