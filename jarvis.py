@@ -24,7 +24,7 @@ from PyQt6 import QtWidgets
 import sys
 import requests
 
-
+# TODO: переделать команду для чата: открывает нужную вкладку, печатает ответ и произносит его
 class Jarvis:
     def __init__(self, picovoice_token, eden_token):
         self.picovoice_token = picovoice_token
@@ -164,7 +164,9 @@ class Jarvis:
         elif phrase == 'not_found':
             filename += 'not_found.wav'
         elif phrase == 'moment_file':
-            filename = f"{self.CDIR}\\moment_file.wav"
+            filename += f"{self.CDIR}\\moment_file.wav"
+        elif phrase == 'subscribe':
+            filename += 'subscribe.wav.wav'
 
         if wait_done:
             self.recorder.stop()
@@ -471,6 +473,12 @@ class Jarvis:
             url = "https://www.youtube.com/results?search_query=" + search_term
             webbrowser.get().open(url)
             self.play('watching')
+            time.sleep(2.0)
+            self.recorder.start()
+
+        elif cmd == 'say_hello':
+            self.recorder.stop()
+            self.play('subscribe')
             time.sleep(2.0)
             self.recorder.start()
 

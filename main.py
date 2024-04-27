@@ -32,8 +32,8 @@ def start_settings(page: ft.Page):
     page.window_resizable = False
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
-    openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='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')
-    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='JdvXgzi7q3MBNrnANK4PGlT0lbJGdu+I4MHlayW1/ykr2/LAFe3kOw==')
+    openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен опенаи')
+    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен пиковойс')
     chrome_pass = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Путь к Chrome')
 
     db = Database()
@@ -211,6 +211,9 @@ def start_settings(page: ft.Page):
             page.update()
         elif index == 2:
             page.add((panel_com))
+        elif index == 3:
+            page.add(chat)
+            page.update()
 
     def check_jarvis(e):
         kaldi_rec = vosk.KaldiRecognizer(model, samplerate)
@@ -253,6 +256,9 @@ def start_settings(page: ft.Page):
 
                                              ])]
                                   )])
+
+    chat = ft.Container(ft.Column([ft.Row([ft.Text('Чат', size=30)], alignment=ft.MainAxisAlignment.CENTER)],
+                                  alignment=ft.MainAxisAlignment.START), height=800, width=1000, alignment=ft.Alignment(0, -0.3))
 
     # command = ft.Container(ft.Text('Команды', size=25),height=800, width=1000, alignment=ft.alignment.Alignment(0, -1))
     list_commands = ft.Container(ft.Column([
@@ -299,7 +305,8 @@ def start_settings(page: ft.Page):
             destinations=[
                 ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Настройки'),
                 ft.NavigationDestination(icon=ft.icons.WECHAT, label='Джарвис'),
-                ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды')
+                ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
+                ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
             ], on_change=navigate
         )
         page.update()
