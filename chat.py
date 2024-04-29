@@ -1,4 +1,6 @@
 import flet as ft
+from db_pkg.database import Database
+from db_pkg.models import User
 
 class Message():
     def __init__(self, user_name: str, text: str, message_type: str):
@@ -50,20 +52,16 @@ class ChatMessage(ft.Row):
         ]
         return colors_lookup[hash(user_name) % len(colors_lookup)]
 
-def main(page: ft.Page):
+def chat_start(page: ft.Page):
     page.horizontal_alignment = "stretch"
     page.title = "Flet Chat"
 
     def join_chat_click(e):
-        if not join_user_name.value:
-            join_user_name.error_text = "Name cannot be blank!"
-            join_user_name.update()
-        else:
-            page.session.set("user_name", join_user_name.value)
-            page.dialog.open = False
-            new_message.prefix = ft.Text(f"{join_user_name.value}: ")
-            page.pubsub.send_all(Message(user_name=join_user_name.value, text=f"{join_user_name.value} has joined the chat.", message_type="login_message"))
-            page.update()
+
+        page.session.set("user_name", join_user_name)
+        new_message.prefix = ft.Text(f"{join_user_name}: ")
+        page.pubsub.send_all(Message(user_name=join_user_name, text=f"{join_user_name} has joined the chat.", message_type="login_message"))
+        page.update()
 
     def send_message_click(e):
         if new_message.value != "":
@@ -83,19 +81,8 @@ def main(page: ft.Page):
     page.pubsub.subscribe(on_message)
 
     # A dialog asking for a user display name
-    join_user_name = ft.TextField(
-        label="Enter your name to join the chat",
-        autofocus=True,
-        on_submit=join_chat_click,
-    )
-    page.dialog = ft.AlertDialog(
-        open=True,
-        modal=True,
-        title=ft.Text("Welcome!"),
-        content=ft.Column([join_user_name], width=300, height=70, tight=True),
-        actions=[ft.ElevatedButton(text="Join chat", on_click=join_chat_click)],
-        actions_alignment="end",
-    )
+
+    join_user_name = 'Gleb'
 
     # Chat messages
     chat = ft.ListView(
@@ -115,6 +102,8 @@ def main(page: ft.Page):
         expand=True,
         on_submit=send_message_click,
     )
+
+    join_chat_click(join_user_name)
 
     # Add everything to the page
     page.add(
@@ -136,5 +125,7 @@ def main(page: ft.Page):
             ]
         ),
     )
-if __name__ == '__main__':
-    ft.app(target=main)
+
+
+
+ft.app(target=chat_start)

@@ -7,6 +7,7 @@ import traceback
 import webbrowser
 from ctypes import POINTER, cast
 import multiprocessing
+import flet as ft
 
 import g4f
 import googlesearch
@@ -23,8 +24,13 @@ from rich import print
 from PyQt6 import QtWidgets
 import sys
 import requests
+from db_pkg.database import Database
+from db_pkg.models import User
+import chat_window
 
 # TODO: переделать команду для чата: открывает нужную вкладку, печатает ответ и произносит его
+
+
 class Jarvis:
     def __init__(self, picovoice_token, eden_token):
         self.picovoice_token = picovoice_token
@@ -481,6 +487,7 @@ class Jarvis:
             self.play('subscribe')
             time.sleep(2.0)
             self.recorder.start()
+
 
         '''elif cmd == 'time_now':
             self.recorder.stop()

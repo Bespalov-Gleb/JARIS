@@ -5,7 +5,7 @@ import queue
 
 # from ctypes import POINTER, cast
 
-
+import multiprocessing
 import openai
 import pvporcupine
 
@@ -14,6 +14,7 @@ import yaml
 #from comtypes import CLSCTX_ALL
 
 from pvrecorder import PvRecorder
+
 # from pycaw.pycaw import (
 #     AudioUtilities,
 #     IAudioEndpointVolume
@@ -22,6 +23,53 @@ from pvrecorder import PvRecorder
 from db_pkg.database import Database
 from db_pkg.models import User
 from jarvis import Jarvis
+
+class Message(ft.Row):
+    def __init__(self, user_name: str, message_type: str, message: str):
+        super().__init__()
+        self.user_name = user_name
+        self.message_type = message_type
+        self.message = message
+        self.vertical_alignment = "start"
+        self.controls = [
+            ft.CircleAvatar(
+                content=ft.Text(self.get_initials(user_name)),
+                color=ft.colors.WHITE,
+                bgcolor=self.get_avatar_color(user_name),
+            ),
+            ft.Column(
+                [
+                    ft.Text(user_name, weight="bold"),
+                    ft.Text(message, selectable=True),
+                ],
+                tight=True,
+                spacing=5,
+            ),
+        ]
+
+    def get_initials(self, user_name: str):
+        if user_name:
+            return user_name[:1].capitalize()
+        else:
+            return "Unknown"  # or any default value you prefer
+
+    def get_avatar_color(self, user_name: str):
+        colors_lookup = [
+            ft.colors.AMBER,
+            ft.colors.BLUE,
+            ft.colors.BROWN,
+            ft.colors.CYAN,
+            ft.colors.GREEN,
+            ft.colors.INDIGO,
+            ft.colors.LIME,
+            ft.colors.ORANGE,
+            ft.colors.PINK,
+            ft.colors.PURPLE,
+            ft.colors.RED,
+            ft.colors.TEAL,
+            ft.colors.YELLOW,
+        ]
+        return colors_lookup[hash(user_name) % len(colors_lookup)]
 
 
 def start_settings(page: ft.Page):
@@ -120,6 +168,9 @@ def start_settings(page: ft.Page):
         elif index == 1:
             page.add(panel_auth)
 
+
+
+
     user_login = ft.TextField(label='Логин', width=300, on_change=validate)
     user_password = ft.TextField(label='Пароль', width=300, password=True, on_change=validate)
 
@@ -212,18 +263,23 @@ def start_settings(page: ft.Page):
         elif index == 2:
             page.add((panel_com))
         elif index == 3:
-            page.add(chat)
-            page.update()
+            page.add(
+                bord,
+                message_line
+            )
 
     def check_jarvis(e):
         kaldi_rec = vosk.KaldiRecognizer(model, samplerate)
         jarvis_object.start_jarvis(kaldi_rec)
+
+
 
     # panel_jarvis = ft.Column([
     # ft.Row([ft.Text('Диалоговая строка')], alignment=ft.MainAxisAlignment.CENTER),
     # ft.Row([ft.Image(src='qt_material/clideo_editor_e88b8c1b9b3440159e1d616a8e862b5d.gif', width=450, height=450)], alignment=ft.MainAxisAlignment.CENTER),
     # ft.Row([ft.Text('Джарвис', size=25)], alignment=ft.MainAxisAlignment.CENTER)
     # ], alignment=ft.MainAxisAlignment.CENTER)
+
 
     back_ground_jarvis = ft.Container(
         width=1010,
@@ -257,9 +313,6 @@ def start_settings(page: ft.Page):
                                              ])]
                                   )])
 
-    chat = ft.Container(ft.Column([ft.Row([ft.Text('Чат', size=30)], alignment=ft.MainAxisAlignment.CENTER)],
-                                  alignment=ft.MainAxisAlignment.START), height=800, width=1000, alignment=ft.Alignment(0, -0.3))
-
     # command = ft.Container(ft.Text('Команды', size=25),height=800, width=1000, alignment=ft.alignment.Alignment(0, -1))
     list_commands = ft.Container(ft.Column([
         ft.Row([ft.Text('Отключение Джарвиса: отключение, пора спать и т.п.', size=15)],
@@ -292,6 +345,81 @@ def start_settings(page: ft.Page):
     panel_com = list_commands
 
     user = db.get_query(User).filter(User.id == -1).first()
+
+
+    def join_chat_click(e):
+
+        page.session.set("user_name", join_user_name)
+        new_message.prefix = ft.Text(f"{join_user_name}: ")
+        page.pubsub.send_all(Message(user_name=join_user_name, message=f"{join_user_name} начал новый диалог.",
+                                     message_type="login_message"))
+        page.update()
+
+    def send_message_click(e):
+        if new_message.value != "":
+            page.pubsub.send_all(Message(user_name=page.session.get("user_name"), message=new_message.value, message_type="login_message"))
+            new_message.value = ""
+            new_message.focus()
+            chat.update()
+            page.update()
+
+    def on_message(message: Message):
+        if message.message_type == "chat_message":
+            m = Message(user_name=join_user_name, message=message, message_type='chat_message')
+        elif message.message_type == "login_message":
+            m = ft.Text(message.message, italic=True, color=ft.colors.WHITE, size=12)
+        chat.controls.append(m)
+        chat.update()
+        page.update()
+
+    page.pubsub.subscribe(on_message)
+
+    # A dialog asking for a user display name
+
+    join_user_name = db.get_query(User.login).filter(User.id == -1).first()
+    join_user_name = str(join_user_name)
+    join_user_name = join_user_name[2:-3]
+
+    # Chat messages
+    chat = ft.ListView(
+        expand=True,
+        spacing=10,
+        auto_scroll=True,
+    )
+
+    # A new message entry form
+    new_message = ft.TextField(
+        hint_text="Write a message...",
+        autofocus=True,
+        shift_enter=True,
+        min_lines=1,
+        max_lines=5,
+        filled=True,
+        expand=True,
+        on_submit=send_message_click,
+    )
+
+    join_chat_click(join_user_name)
+    message_line = ft.Row(
+        [
+            new_message,
+            ft.IconButton(
+                icon=ft.icons.SEND_ROUNDED,
+                tooltip="Send message",
+                on_click=send_message_click,
+            ),
+        ]
+    )
+    bord = ft.Container(
+                    content=chat,
+                    border=ft.border.all(1, ft.colors.OUTLINE),
+                    border_radius=5,
+                    padding=10,
+                    expand=True,
+                )
+
+    # Add everything to the page
+
     if user is not None:
         OPENAI_TOKEN = user.openai_token
         PICOVOICE_TOKEN = user.picovoice_token
@@ -354,4 +482,5 @@ def start_settings(page: ft.Page):
     q = queue.Queue()
 
 
-ft.app(target=start_settings)
+app = multiprocessing.Process(target=ft.app(target=start_settings), daemon=True)
+app.start()
