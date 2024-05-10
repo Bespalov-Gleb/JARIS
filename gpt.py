@@ -11,7 +11,7 @@ import g4f
 def gpt1(content):
     response = g4f.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=[{"role": "system", "content": 'Ты образовательный голосовой помощник'}],
+        messages=[{"role": "system", "content": content}],
         
         stream=True,
     )
@@ -23,7 +23,18 @@ def gpt2(content):
     response = g4f.ChatCompletion.create(
         model="gpt-3.5-turbo",
         provider=g4f.Provider.Feedough,
-        messages=[{"role": "user", "content": 'Ты образовательный голосовой помощник'}],
+        messages=[{"role": "user", "content": content}],
+        stream=True,
+    )
+    for message in response:
+        print(message)
+
+
+def gpt3(content):
+    response = g4f.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        provider=g4f.Provider.FlowGpt,
+        messages=[{"role": "user", "content": content}],
         stream=True,
     )
     for message in response:
@@ -31,4 +42,4 @@ def gpt2(content):
 
 
 if __name__ == '__main__':
-    gpt2("Ты умеешь решать уравнения?")
+    gpt1("Ты умеешь решать уравнения?")
