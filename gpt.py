@@ -15,8 +15,8 @@ def gpt1(content):
         
         stream=True,
     )
-    for message in response:
-        print(message, flush=True, end='')
+
+    return response
 
 
 def gpt2(content):
@@ -26,8 +26,8 @@ def gpt2(content):
         messages=[{"role": "user", "content": content}],
         stream=True,
     )
-    for message in response:
-        print(message)
+
+    return response
 
 
 def gpt3(content):
@@ -37,9 +37,12 @@ def gpt3(content):
         messages=[{"role": "user", "content": content}],
         stream=True,
     )
-    for message in response:
-        print(message)
+
+    return response
 
 
 if __name__ == '__main__':
-    gpt1("Ты умеешь решать уравнения?")
+    gpt_func = gpt1
+
+    for message in gpt_func("Ты умеешь решать уравнения?"):
+        print(message)
