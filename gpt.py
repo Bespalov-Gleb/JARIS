@@ -45,4 +45,4 @@ if __name__ == '__main__':
     gpt_func = gpt1
 
     for message in gpt_func("Ты умеешь решать уравнения?"):
-        print(message)
+        print(message, "sf")

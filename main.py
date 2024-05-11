@@ -22,7 +22,9 @@ from pvrecorder import PvRecorder
 
 from db_pkg.database import Database
 from db_pkg.models import User
+from gpt import gpt1
 from jarvis import Jarvis
+
 
 class Message(ft.Row):
     def __init__(self, user_name: str, message_type: str, message: str):
@@ -346,9 +348,7 @@ def start_settings(page: ft.Page):
 
     user = db.get_query(User).filter(User.id == -1).first()
 
-
     def join_chat_click(e):
-
         page.session.set("user_name", join_user_name)
         new_message.prefix = ft.Text(f"{join_user_name}: ")
         page.pubsub.send_all(Message(user_name=join_user_name, message=f"{join_user_name} начал новый диалог.",
@@ -357,7 +357,7 @@ def start_settings(page: ft.Page):
 
     def send_message_click(e):
         if new_message.value != "":
-            page.pubsub.send_all(Message(user_name=page.session.get("user_name"), message=new_message.value, message_type="login_message"))
+            page.pubsub.send_all(Message(user_name=page.session.get("user_name"), message=new_message.value, message_type="chat_message"))
             new_message.value = ""
             new_message.focus()
             chat.update()
@@ -365,9 +365,23 @@ def start_settings(page: ft.Page):
 
     def on_message(message: Message):
         if message.message_type == "chat_message":
-            m = Message(user_name=join_user_name, message=message, message_type='chat_message')
+            m = Message(user_name=join_user_name, message=message.message, message_type='chat_message')
         elif message.message_type == "login_message":
             m = ft.Text(message.message, italic=True, color=ft.colors.WHITE, size=12)
+        chat.controls.append(m)
+        chat.update()
+        page.update()
+
+        gpt_answer(message)
+
+    def gpt_answer(message: Message):
+        response = gpt1(message.message)
+        text = ''
+        for msg in response:
+            text += msg
+
+        m = Message(user_name='SVET', message=text, message_type='chat_message')
+        jarvis_object.tts(response)
         chat.controls.append(m)
         chat.update()
         page.update()

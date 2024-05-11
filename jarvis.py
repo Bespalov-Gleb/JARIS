@@ -15,11 +15,11 @@ import pvporcupine
 import simpleaudio as sa
 import sounddevice as sd
 import yaml
-from comtypes import CLSCTX_ALL
+#from comtypes import CLSCTX_ALL
 from fuzzywuzzy import fuzz
 from pvrecorder import PvRecorder
-from pycaw.api.endpointvolume import IAudioEndpointVolume
-from pycaw.utils import AudioUtilities
+# from pycaw.api.endpointvolume import IAudioEndpointVolume
+# from pycaw.utils import AudioUtilities
 from rich import print
 from PyQt6 import QtWidgets
 import sys
@@ -202,7 +202,7 @@ class Jarvis:
                 self.play('gpt_start')
                 if self.is_first_request:
                     self.message_log.append({"role": "user", "content": voice})
-                    self.first_request = True
+                    self.is_first_request = True
                     response = self.gpt_answer()
                     self.message_log.append({"role": "assistant", "content": response})
                     self.recorder.stop()
@@ -267,21 +267,21 @@ class Jarvis:
             webbrowser.open('https://www.google.com/')
             self.play("ok")
 
-        elif cmd == 'sound_off':
-            self.play("ok", True)
-
-            devices = AudioUtilities.GetSpeakers()
-            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-            volume = cast(interface, POINTER(IAudioEndpointVolume))
-            volume.SetMute(1, None)
-
-        elif cmd == 'sound_on':
-            devices = AudioUtilities.GetSpeakers()
-            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-            volume = cast(interface, POINTER(IAudioEndpointVolume))
-            volume.SetMute(0, None)
-
-            self.play("ok")
+        # elif cmd == 'sound_off':
+        #     self.play("ok", True)
+        #
+        #     devices = AudioUtilities.GetSpeakers()
+        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
+        #     volume.SetMute(1, None)
+        #
+        # elif cmd == 'sound_on':
+        #     devices = AudioUtilities.GetSpeakers()
+        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
+        #     volume.SetMute(0, None)
+        #
+        #     self.play("ok")
 
         elif cmd == 'thanks':
             self.play("thanks")
