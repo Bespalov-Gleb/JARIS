@@ -24,6 +24,7 @@ from db_pkg.database import Database
 from db_pkg.models import User
 from gpt import gpt1
 from jarvis import Jarvis
+from colorama import *
 
 
 class Message(ft.Row):
@@ -76,18 +77,19 @@ class Message(ft.Row):
 
 def start_settings(page: ft.Page):
     page.title = 'Jarvis'
-    page.theme_mode = 'dark'
-    page.window_width = 1010
-    page.window_height = 810
+    page.theme_mode = 'SYSTEM'
+    CDIR = os.getcwd()
+    page.window_width = 1900
+    page.window_height = 1100
     page.window_resizable = False
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-
+    page.vertical_alignment = 'center'
+    page.horizontal_alignment = 'center'
     openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен опенаи')
     picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен пиковойс')
     chrome_pass = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Путь к Chrome')
 
     db = Database()
-    CDIR = os.getcwd()
+
 
     def register(e):
         user_to_add = User(
@@ -222,7 +224,8 @@ def start_settings(page: ft.Page):
                 page.update()
 
     def quit_j(e):
-        user_to_delete = db.get_query(User).filter(User.id == -1)
+        user_to_delete = db.get_query(User).filter(User.id == -1).one()
+        user_to_delete = db.get_query(User).filter(User.id == -1).one()
         db.delete(user_to_delete)
         # c.execute("""DELETE FROM users WHERE id = -1""")
 
@@ -236,23 +239,37 @@ def start_settings(page: ft.Page):
         )
         page.update()
 
+
     set_but = ft.ElevatedButton(text='Сохранить', width=300, on_click=open_jarvis)
     quit_btn = ft.ElevatedButton(text='Выйти из аккаунта', width=300, icon=ft.icons.EXIT_TO_APP, on_click=quit_j)
 
-    panel_settings = ft.Row(
-        [
-            ft.Column(
-                [
-                    ft.Text('Настройки', size=25),
-                    openai_token,
-                    picovoice_token,
-                    chrome_pass,
-                    set_but,
-                    quit_btn
-                ], alignment=ft.MainAxisAlignment.CENTER
-            )
-        ], alignment=ft.MainAxisAlignment.CENTER
-    )
+    def on_hower_inter(e):
+        if internet_com.opacity == False:
+
+            internet_com.opacity = True
+        else:
+
+            internet_com.opacity = False
+        e.control.update()
+
+    def on_hower_pk(e):
+        if pk_com.opacity == False:
+
+            pk_com.opacity = True
+        else:
+
+            pk_com.opacity = False
+        e.control.update()
+
+    def on_hower_learn(e):
+        if learn_com.opacity == False:
+
+            learn_com.opacity = True
+        else:
+
+            learn_com.opacity = False
+        e.control.update()
+
 
     def navigate(e):
         index = page.navigation_bar.selected_index
@@ -260,19 +277,48 @@ def start_settings(page: ft.Page):
         if index == 0:
             page.add(panel_settings)
         elif index == 1:
-            page.add(jarvis_st)
+            page.add(panel_svet)
             page.update()
         elif index == 2:
-            page.add((panel_com))
+            page.add(ft.Row([ft.Column([ft.Text('Команды', size=45)], alignment=ft.MainAxisAlignment.START)], alignment=ft.MainAxisAlignment.CENTER),
+                     ft.Row([ft.Text('aaaaaaaaaaaaaaaaa', opacity=False, size=40)]),
+                     ft.Row([ft.Text('aaaaaaaaaaaaaaaaa', opacity=False, size=40)]),
+                     ft.Row([ft.Column([
+                         ft.Container(width=300, height=300, content=card_for_inter, on_hover=on_hower_inter)
+                     ]),
+                         ft.Column([ft.Text('aaaaaaaaaaaaaaaaaaaa', opacity=False, size=25)]),
+                         ft.Column([
+                             ft.Container(width=300, height=300, content=card_for_pk, on_hover=on_hower_pk)
+                         ]),
+                         ft.Column([ft.Text('aaaaaaaaaaaaaaaaaaaa', opacity=False, size=25)]),
+                         ft.Column([
+                             ft.Container(width=300, height=300, content=card_for_learn, on_hover=on_hower_learn)
+                         ])], alignment=ft.MainAxisAlignment.CENTER),
+                    ft.Row([ft.Column([
+                        ft.Container(width=300, height=300, content=internet_com, on_hover=on_hower_inter)
+                    ]),
+                        ft.Column([ft.Text('aaaaaaaaaaaaaaaaaaaa', opacity=False, size=25)]),
+                        ft.Column([
+                            ft.Container(width=300, height=300, content=pk_com, on_hover=on_hower_pk)
+                        ]),
+                        ft.Column([ft.Text('aaaaaaaaaaaaaaaaaaaa', opacity=False, size=25)]),
+                        ft.Column([
+                            ft.Container(width=300, height=300, content=learn_com, on_hover=on_hower_learn)
+                        ])], alignment=ft.MainAxisAlignment.CENTER))
+
+            page.update()
         elif index == 3:
             page.add(
                 bord,
                 message_line
             )
+            page.update()
 
     def check_jarvis(e):
         kaldi_rec = vosk.KaldiRecognizer(model, samplerate)
         jarvis_object.start_jarvis(kaldi_rec)
+
+
 
 
 
@@ -284,16 +330,15 @@ def start_settings(page: ft.Page):
 
 
     back_ground_jarvis = ft.Container(
-        width=1010,
-        height=810,
-        alignment=ft.alignment.center_left,
-        bgcolor='black',
-        content=(ft.Image(src=f'{CDIR}/assets/qt_material/bg 1000_600.jpg'))
+        width=2100,
+        height=1200,
+        alignment=ft.Alignment(-2,-2),
+        content=(ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg'))
     )
 
-    eye_jarvis = ft.Container(ft.Image(f'{CDIR}/assets/qt_material/20240223_151534.gif',
-                                       height=500, width=500), height=800, width=1000,
-                              alignment=ft.alignment.top_center)
+    eye_jarvis = ft.Container(ft.Image(f'{CDIR}/assets/qt_material/msg1032980595-187354.png',
+                                       height=700, width=700), height=720, width=1300,
+                              alignment=ft.alignment.Alignment(1,-1))
 
     black_str = ft.Container(
         bgcolor='black',
@@ -303,17 +348,52 @@ def start_settings(page: ft.Page):
     jarvis = ft.Container(ft.Text('Jarvis', size=35, color='blue'), height=800, width=1000,
                           alignment=ft.alignment.Alignment(0, 0.3))
 
-    start_btn = ft.Row([ft.Container(ft.ElevatedButton(text='Запуск', on_click=check_jarvis, bgcolor='blue',
-                                                       color='black', height=50, width=150), height=800, width=1000,
-                                     alignment=ft.alignment.Alignment(0, 0.5))])
+    start_btn = ft.Row([ft.Container(ft.ElevatedButton(text='Запуск', on_click=check_jarvis, bgcolor=ft.colors.BLUE_300,
+                                                       color='black', height=70, width=200), height=800, width=1000,
+                                     alignment=ft.alignment.Alignment(1.1, 0.7))])
 
-    jarvis_st = ft.Row([ft.Column([ft.Stack([back_ground_jarvis,
-                                             eye_jarvis,
-                                             jarvis,
-                                             start_btn
+    jarvis_st = ft.Row([ft.Column([ft.Stack([
+        back_ground_jarvis,
+        eye_jarvis,
+        start_btn
+
+
 
                                              ])]
                                   )])
+
+    sett = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([
+        ft.Image(f'{CDIR}/assets/qt_material/photo1718366319.jpeg', width=300, height=300),
+                    ft.Text('Настройки', size=25),
+                    openai_token,
+                    picovoice_token,
+                    chrome_pass,
+                    set_but,
+                    quit_btn], alignment=ft.alignment.center_right)], alignment=ft.MainAxisAlignment.CENTER))
+    panel_settings = ft.Container(
+        ft.Stack([
+            ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
+            sett]), alignment=ft.Alignment(1.0,1.0))
+
+    svet = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([
+        ft.Image(f'{CDIR}/assets/qt_material/msg1032980595-187354.png',
+                 height=700, width=700)
+    ])], alignment=ft.MainAxisAlignment.CENTER))
+
+    label = ft.Row([ft.Container(ft.Text('SVET', size=45, color=ft.colors.BLUE_300),
+                                 height=800, width=1000, alignment=ft.alignment.Alignment(0.98, 0.37))])
+
+
+    panel_svet = ft.Container(
+        ft.Stack([
+            ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
+            svet,
+            start_btn
+        ]), alignment=ft.Alignment(1,1)
+    )
+
+
+
 
     # command = ft.Container(ft.Text('Команды', size=25),height=800, width=1000, alignment=ft.alignment.Alignment(0, -1))
     list_commands = ft.Container(ft.Column([
@@ -345,6 +425,48 @@ def start_settings(page: ft.Page):
 
     ], alignment=ft.MainAxisAlignment.START), height=800, width=1000, alignment=ft.Alignment(0, -0.3))
     panel_com = list_commands
+
+
+    internet_com = ft.Container(
+        width=500,
+        height=300,
+        bgcolor='white',
+        animate_opacity=300,
+        opacity=False,
+        content=ft.Text('Браузер - открой браузер, гугл хром\n'
+                        'Сайты - открой ютуб/вконтакте/телеграм\n'
+                        'Поиск - найди информацию о, найди в интернете\n'
+                        'Ютуб - найди в ютубе, открой в ютубе\n'
+                        'Найти человека - пробей человека, найди в соц сетях', color='black', size=20), alignment=ft.alignment.center_left)
+
+    pk_com = ft.Container(
+        width=500,
+        height=300,
+        bgcolor='white',
+        animate_opacity=300,
+        opacity=False,
+        content=ft.Text('Отключение программы - отключение, пора спать\n'
+                        'Включение/отключение звука - включи\отключи звук\n'
+                        'Отключение ПК - завершение работы, мы закончили\n'
+                        'Поиск/создание/удаление файлов - создай/найди/удали файл\n'
+                        'Время - который час, сколько времени', color='black', size=20), alignment=ft.alignment.center
+    )
+
+    learn_com = ft.Container(
+        width=500,
+        height=300,
+        bgcolor='white',
+        animate_opacity=300,
+        opacity=False,
+        content=ft.Text('Здесь будут команды для работы с учебными материалами', color='black', size=20), alignment=ft.alignment.center_right)
+
+
+    card_for_inter = ft.Image(f'{CDIR}/assets/qt_material/для интернета.png',
+                 height=700, width=700)
+    card_for_pk = ft.Image(f'{CDIR}/assets/qt_material/для пк.png',
+                 height=700, width=700)
+    card_for_learn = ft.Image(f'{CDIR}/assets/qt_material/для учебы.png',
+                 height=700, width=700)
 
     user = db.get_query(User).filter(User.id == -1).first()
 
@@ -441,7 +563,7 @@ def start_settings(page: ft.Page):
 
         jarvis_object = Jarvis(picovoice_token=PICOVOICE_TOKEN, eden_token=EDEN_TOKEN)
 
-        page.add(jarvis_st)
+        page.add(panel_svet)
 
         page.navigation_bar = ft.NavigationBar(
             destinations=[

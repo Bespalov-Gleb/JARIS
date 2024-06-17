@@ -61,11 +61,10 @@ class Jarvis:
         result = json.loads(response.text)
 
         audio_url = result.get('lovoai').get('audio_resource_url')
-        r = requests.get(audio_url)
         file_name = 'moment_file.wav'
 
         with open(file_name, 'wb') as file:
-            file.write(r.content)
+            file.write(requests.get(audio_url).content)
             file.close()
 
     def start_jarvis(self, kaldi_rec):
@@ -109,9 +108,8 @@ class Jarvis:
         res = ''
         response = g4f.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            provider=g4f.Provider.Feedough,
             messages=[{"role": "user", "content": 'Ты образовательный голосовой помощник'}],
-            stream=True,
+            stream=True
 
         )
         for mes in response:
@@ -123,7 +121,7 @@ class Jarvis:
     # self.play(f'{CDIR}\\sound\\ok{random.choice([1, 2, 3, 4])}.wav')
 
     def play(self, phrase, wait_done=True):
-        filename = fr"{self.CDIR}/assets/sound/"
+        filename = fr"{self.CDIR}//assets//sound//"
 
         if phrase == "greet":  # for py 3.8
             filename += f"greet{random.choice([1, 2, 3])}.wav"
@@ -170,7 +168,7 @@ class Jarvis:
         elif phrase == 'not_found':
             filename += 'not_found.wav'
         elif phrase == 'moment_file':
-            filename += f"{self.CDIR}\\moment_file.wav"
+            filename += "moment_file.wav"
         elif phrase == 'subscribe':
             filename += 'subscribe.wav.wav'
 
