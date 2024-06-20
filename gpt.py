@@ -1,4 +1,5 @@
 import g4f
+from g4f.client import Client
 
 
 # ['AItianhuSpace', 'Aichatos', 'Aura', 'Bing', 'BingCreateImages', 'Blackbox', 'ChatForAi', 'Chatgpt4Online',
@@ -9,7 +10,8 @@ import g4f
 # 'Replicate', 'ReplicateImage', 'TalkAi', 'Theb', 'ThebApi', 'Vercel', 'WhiteRabbitNeo', 'You', 'Yqcloud']
 
 def gpt1(content):
-    response = g4f.ChatCompletion.create(
+    client = Client()
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "system", "content": content}],
         
@@ -45,4 +47,4 @@ if __name__ == '__main__':
     gpt_func = gpt1
 
     for message in gpt_func("Ты умеешь решать уравнения?"):
-        print(message, "sf")
+        print(str(message), "sf")

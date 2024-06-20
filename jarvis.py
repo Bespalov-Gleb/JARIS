@@ -10,6 +10,7 @@ import multiprocessing
 import flet as ft
 
 import g4f
+from g4f.client import Client
 import googlesearch
 import pvporcupine
 import simpleaudio as sa
@@ -24,6 +25,8 @@ from rich import print
 from PyQt6 import QtWidgets
 import sys
 import requests
+
+
 from db_pkg.database import Database
 from db_pkg.models import User
 import chat_window
@@ -66,6 +69,7 @@ class Jarvis:
         with open(file_name, 'wb') as file:
             file.write(requests.get(audio_url).content)
             file.close()
+        os.replace(f'{os.getcwd()}/moment_file.wav', f'{os.getcwd()}/assets/sound')
 
     def start_jarvis(self, kaldi_rec):
         self.recorder.start()
@@ -104,11 +108,12 @@ class Jarvis:
                 print(f"Unexpected {err=}, {type(err)=}")
                 raise
 
-    def gpt_answer(self):
+    def gpt_answer(self, question):
+        client = Client()
         res = ''
-        response = g4f.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": 'Ты образовательный голосовой помощник'}],
+            messages=[{"role": "user", "content": f'{question}'}],
             stream=True
 
         )
@@ -121,52 +126,54 @@ class Jarvis:
     # self.play(f'{CDIR}\\sound\\ok{random.choice([1, 2, 3, 4])}.wav')
 
     def play(self, phrase, wait_done=True):
-        filename = fr"{self.CDIR}//assets//sound//"
+        filename = fr"C:/Users/ArdorPC/Documents/GitHub/JARIS/assets/svet_audio/"
 
         if phrase == "greet":  # for py 3.8
-            filename += f"greet{random.choice([1, 2, 3])}.wav"
+            filename += f"{random.choice(['welcome', 'i_here', 'glad', 'attention', 'hear_me'])}.wav"
         elif phrase == "ok":
-            filename += f"ok{random.choice([1, 2, 3])}.wav"
+            filename += f"{random.choice(['done', 'yep', 'contact'])}.wav"
         elif phrase == "not_found":
-            filename += "not_found.wav"
+            filename += f"{random.choice(['bad_hear', 'can_you_rep'])}.wav"
         elif phrase == "thanks":
             filename += "thanks.wav"
         elif phrase == "run":
-            filename += "run.wav"
+            filename += "listen.wav"
         elif phrase == "stupid":
-            filename += "stupid.wav"
+            filename += "just_learn.wav"
         elif phrase == "ready":
             filename += "ready.wav"
         elif phrase == "off":
-            filename += "off.wav"
+            filename += f"{random.choice(['power_off.wav', 'see_u.wav', 'see_u_later'])}"
         elif phrase == "loading":
-            filename += "loading.wav"
+            filename += f"{random.choice(['check_sys', 'start_check'])}.wav"
         elif phrase == "result":
-            filename += "result.wav"
-        elif phrase == 'new_element':
-            filename += "new_element.wav"
+            filename += "done.wav"
+        elif phrase == 'new_fol':
+            filename += "folder_create.wav"
+        elif phrase == 'new_file':
+            filename += 'file_create.wav'
         elif phrase == 'delete':
-            filename += 'delete.wav'
+            filename += 'done.wav'
         elif phrase == 'cong':
-            filename += 'cong.wav'
+            filename += 'congratilations.wav'
         elif phrase == 'gpt_start':
-            filename += 'gpt_start.wav'
+            filename += 'larger_find.wav'
         elif phrase == 'dir_name':
-            filename += 'dir_name.wav'
+            filename += 'another_name_fol.wav'
         elif phrase == 'file_name':
-            filename += 'file_name.wav'
+            filename += 'another_name_file.wav'
         elif phrase == 'is_found':
-            filename += 'is_found.wav'
+            filename += 'check_done.wav'
         elif phrase == 'nfs':
             filename += 'nfs.wav'
         elif phrase == 'something_else':
-            filename += 'something_else.wav'
+            filename += f'{random.choice(["dfa.wav", "strange.wav", "not_found.wav"])}'
         elif phrase == 'watching':
-            filename += 'watching.wav'
+            filename += 'glad_watching.wav'
         elif phrase == 'youtube':
-            filename += 'youtube.wav'
+            filename += 'check_youtube.wav'
         elif phrase == 'not_found':
-            filename += 'not_found.wav'
+            filename += 'strange.wav'
         elif phrase == 'moment_file':
             filename += "moment_file.wav"
         elif phrase == 'subscribe':
@@ -201,7 +208,7 @@ class Jarvis:
                 if self.is_first_request:
                     self.message_log.append({"role": "user", "content": voice})
                     self.is_first_request = True
-                    response = self.gpt_answer()
+                    response = self.gpt_answer(voice)
                     self.message_log.append({"role": "assistant", "content": response})
                     self.recorder.stop()
                     if len(response) < 1000:
@@ -367,13 +374,13 @@ class Jarvis:
             self.recorder.stop()
             try:
                 os.mkdir(dir_name)
-                self.play('new_element')
+                self.play('new_fol')
             except FileExistsError:
                 self.play('dir_name')
                 step = QtWidgets.QInputDialog.getText(None, 'Введите имя папки', 'Имя папки:')
                 dir_name = step[0]
                 os.mkdir(dir_name)
-                self.play('new_element')
+                self.play('new_fol')
         elif cmd == 'make_new_file':
             self.play('loading')
             prg = QtWidgets.QApplication(sys.argv)
@@ -382,14 +389,14 @@ class Jarvis:
             self.recorder.stop()
             try:
                 new_file = open(file_name, 'w+')
-                self.play('new_element')
+                self.play('new_file')
                 self.recorder.start()
             except FileExistsError:
                 self.play('file_name')
                 file_name = QtWidgets.QInputDialog.getText(None, 'Введите имя файла', 'Имя файла:')
                 file_name = file_name[0]
                 new_file = open(file_name, 'w+')
-                self.play('new_element')
+                self.play('new_file')
                 self.recorder.start()
 
         elif cmd == "delete_dir":

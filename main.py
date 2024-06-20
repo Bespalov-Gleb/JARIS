@@ -476,6 +476,9 @@ def start_settings(page: ft.Page):
         page.pubsub.send_all(Message(user_name=join_user_name, message=f"{join_user_name} начал новый диалог.",
                                      message_type="login_message"))
         page.update()
+    def gpt_in_chat(e, message):
+        new_message.prefix = ft.Text("SVET:")
+        page.pubsub.send_all(Message(user_name='SVET', message=f"{message}", message_type="login_message"))
 
     def send_message_click(e):
         if new_message.value != "":
@@ -500,7 +503,7 @@ def start_settings(page: ft.Page):
         response = gpt1(message.message)
         text = ''
         for msg in response:
-            text += msg
+            text += str(msg)
 
         m = Message(user_name='SVET', message=text, message_type='chat_message')
         jarvis_object.tts(response)
