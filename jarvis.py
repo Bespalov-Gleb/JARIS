@@ -5,11 +5,11 @@ import struct
 import time
 import traceback
 import webbrowser
-from ctypes import POINTER, cast
-import multiprocessing
-import flet as ft
+from ctypes import cast
 
-import g4f
+import pyautogui
+from _ctypes import POINTER
+from comtypes import CLSCTX_ALL
 from g4f.client import Client
 import googlesearch
 import pvporcupine
@@ -19,8 +19,8 @@ import yaml
 #from comtypes import CLSCTX_ALL
 from fuzzywuzzy import fuzz
 from pvrecorder import PvRecorder
-# from pycaw.api.endpointvolume import IAudioEndpointVolume
-# from pycaw.utils import AudioUtilities
+from pycaw.api.endpointvolume import IAudioEndpointVolume
+from pycaw.utils import AudioUtilities
 from rich import print
 from PyQt6 import QtWidgets
 import sys
@@ -30,6 +30,8 @@ import requests
 from db_pkg.database import Database
 from db_pkg.models import User
 import chat_window
+from gpt import gpt1
+
 
 # TODO: переделать команду для чата: открывает нужную вкладку, печатает ответ и произносит его
 
@@ -41,11 +43,12 @@ class Jarvis:
 
         self.message_log = [{"role": "system", "content": "Ты голосовой ассистент из железного человека."}]
         self.is_first_request = True
-        self.VA_CMD_LIST = yaml.safe_load(open('commands.yaml', 'rt', encoding='utf8'),)
+        self.VA_CMD_LIST = yaml.safe_load(open('commands.yaml', 'rt', encoding='utf8'), )
         self.CDIR = os.getcwd()
         self.porcupine = pvporcupine.create(
             access_key=self.picovoice_token,
-            keywords=['jarvis'],
+            keyword_paths=[os.path.join(f"{self.CDIR}", "assets", "path", "path.ppn")],
+            model_path=os.path.join(f'{self.CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
             sensitivities=[1]
         )
         self.recorder = PvRecorder(device_index=-1, frame_length=self.porcupine.frame_length)
@@ -99,7 +102,7 @@ class Jarvis:
                     sp = struct.pack("h" * len(pcm), *pcm)
 
                     if kaldi_rec.AcceptWaveform(sp):
-                        if self.va_respond(json.loads(kaldi_rec.Result())["text"]):
+                        if self.va_respond(json.loads(kaldi_rec.Result())["text"], type='base'):
                             ltc = time.time()
 
                         break
@@ -121,15 +124,22 @@ class Jarvis:
             res += mes
         return res
 
-
-
     # self.play(f'{CDIR}\\sound\\ok{random.choice([1, 2, 3, 4])}.wav')
+
+    def main_connect(self, kaldi_rec):
+        self.recorder.stop()
+        self.play('gpt_start')
+        self.recorder.start()
+
+        return self.va_respond(json.loads(kaldi_rec.Result())["text"], type='gpt')
+
+
 
     def play(self, phrase, wait_done=True):
         filename = fr"C:/Users/ArdorPC/Documents/GitHub/JARIS/assets/svet_audio/"
 
         if phrase == "greet":  # for py 3.8
-            filename += f"{random.choice(['welcome', 'i_here', 'glad', 'attention', 'hear_me'])}.wav"
+            filename += f"{random.choice(['welcome', 'i_here', 'attention', 'hear_me'])}.wav"
         elif phrase == "ok":
             filename += f"{random.choice(['done', 'yep', 'contact'])}.wav"
         elif phrase == "not_found":
@@ -143,7 +153,7 @@ class Jarvis:
         elif phrase == "ready":
             filename += "ready.wav"
         elif phrase == "off":
-            filename += f"{random.choice(['power_off.wav', 'see_u.wav', 'see_u_later'])}"
+            filename += f"{random.choice(['power_off.wav', 'see_u.wav', 'see_u_later.wav'])}"
         elif phrase == "loading":
             filename += f"{random.choice(['check_sys', 'start_check'])}.wav"
         elif phrase == "result":
@@ -155,7 +165,7 @@ class Jarvis:
         elif phrase == 'delete':
             filename += 'done.wav'
         elif phrase == 'cong':
-            filename += 'congratilations.wav'
+            filename += f'{random.choice(["congratilations.wav", "glad.wav"])}'
         elif phrase == 'gpt_start':
             filename += 'larger_find.wav'
         elif phrase == 'dir_name':
@@ -178,6 +188,8 @@ class Jarvis:
             filename += "moment_file.wav"
         elif phrase == 'subscribe':
             filename += 'subscribe.wav.wav'
+        elif phrase == 'switch_done':
+            filename += 'swith_done.wav'
 
         if wait_done:
             self.recorder.stop()
@@ -192,47 +204,55 @@ class Jarvis:
             # time.sleep(0.5)
             self.recorder.start()
 
-    def va_respond(self, voice: str):
+    def va_respond(self, voice: str, type: str):
         print(f"Распознано: {voice}")
 
         cmd = self.recognize_cmd(self.filter_cmd(voice))
 
         print(cmd)
-
-        if len(cmd['cmd'].strip()) <= 0:
-            return False
-        elif cmd['percent'] < 54 or cmd['cmd'] not in self.VA_CMD_LIST.keys():
-
-            if fuzz.ratio(voice.join(voice.split()[:1]).strip(), "скажи") > 75:
-                self.play('gpt_start')
-                if self.is_first_request:
-                    self.message_log.append({"role": "user", "content": voice})
-                    self.is_first_request = True
-                    response = self.gpt_answer(voice)
-                    self.message_log.append({"role": "assistant", "content": response})
-                    self.recorder.stop()
-                    if len(response) < 1000:
-                        self.tts(response)
-                        # pr_tts = multiprocessing.Process(target=self.tts(response), name='tts')
-                        # pr_tts.start()
-                        # text_gpt = multiprocessing.Process(target=)
-                        self.play('moment_file')
-                        os.remove('moment_file.wav')
-                        time.sleep(0.5)
-                        self.recorder.start()
-                        return False
-                    else:
-                        self.play('something_else')
-                        time.sleep(0.5)
-                        self.recorder.start()
-            else:
-                self.play("not_found")
-                time.sleep(1)
-
+        if type == 'base':
+            if len(cmd['cmd'].strip()) <= 0:
                 return False
-        else:
-            self.execute_cmd(cmd['cmd'], voice)
-            return True, voice
+            elif cmd['percent'] < 54 or cmd['cmd'] not in self.VA_CMD_LIST.keys():
+
+                if fuzz.ratio(voice.join(voice.split()[:1]).strip(), "скажи") > 75:
+                    self.play('gpt_start')
+                    if self.is_first_request:
+                        self.message_log.append({"role": "user", "content": voice})
+                        self.is_first_request = True
+                        response = self.gpt_answer(voice)
+                        self.message_log.append({"role": "assistant", "content": response})
+                        self.recorder.stop()
+                        if len(response) < 1000:
+
+                            self.tts(response)
+                            # pr_tts = multiprocessing.Process(target=self.tts(response), name='tts')
+                            # pr_tts.start()
+                            # text_gpt = multiprocessing.Process(target=)
+                            self.play('moment_file')
+                            os.remove('moment_file.wav')
+                            time.sleep(0.5)
+                            self.recorder.start()
+                            return False
+                        else:
+                            self.play('something_else')
+                            time.sleep(0.5)
+                            self.recorder.start()
+                else:
+                    self.play("not_found")
+                    time.sleep(1)
+
+                    return False
+            else:
+                self.execute_cmd(cmd['cmd'], voice)
+                return True, voice
+
+        elif type == 'gpt':
+            response = gpt1(voice)
+            text = ''
+            for msg in response:
+                text += str(msg)
+            return text
 
     def filter_cmd(self, raw_voice: str):
         VA_ALIAS = ('джарвис',)
@@ -272,21 +292,22 @@ class Jarvis:
             webbrowser.open('https://www.google.com/')
             self.play("ok")
 
-        # elif cmd == 'sound_off':
-        #     self.play("ok", True)
-        #
-        #     devices = AudioUtilities.GetSpeakers()
-        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
-        #     volume.SetMute(1, None)
-        #
-        # elif cmd == 'sound_on':
-        #     devices = AudioUtilities.GetSpeakers()
-        #     interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        #     volume = cast(interface, POINTER(IAudioEndpointVolume))
-        #     volume.SetMute(0, None)
-        #
-        #     self.play("ok")
+        elif cmd == 'sound_off':
+            self.play('switch_done')
+
+            devices = AudioUtilities.GetSpeakers()
+            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            volume = cast(interface, POINTER(IAudioEndpointVolume))
+            volume.SetMute(1, None)
+
+
+        elif cmd == 'sound_on':
+            devices = AudioUtilities.GetSpeakers()
+            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            volume = cast(interface, POINTER(IAudioEndpointVolume))
+            volume.SetMute(0, None)
+
+            self.play('switch_done')
 
         elif cmd == 'thanks':
             self.play("thanks")
@@ -294,43 +315,43 @@ class Jarvis:
         elif cmd == 'stupid':
             self.play("stupid")
 
-            '''elif cmd == 'switch_to_headphones':
-                self.play("ok")
-                pyautogui.moveTo(5, 1064, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(31, 938, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(249, 420, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(110, 342, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(550, 245, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(607, 198, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(1887, 15, duration=0.7)
-                pyautogui.leftClick()
-                time.sleep(0.5)
-                self.play("ready")
+        elif cmd == 'switch_to_headphones':
+            self.play("ok")
+            pyautogui.moveTo(5, 1064, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(31, 938, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(249, 420, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(110, 342, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(550, 245, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(607, 198, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(1887, 15, duration=0.7)
+            pyautogui.leftClick()
+            time.sleep(0.5)
+            self.play("ready")
     
-            elif cmd == 'switch_to_dynamics':
-                self.play("ok")
-                pyautogui.moveTo(5, 1064, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(31, 938, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(249, 420, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(110, 342, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(550, 245, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(566, 299, duration=0.7)
-                pyautogui.leftClick()
-                pyautogui.moveTo(1887, 15, duration=0.7)
-                pyautogui.leftClick()
-                time.sleep(0.5)
-                self.play("ready")'''
+        elif cmd == 'switch_to_dynamics':
+            self.play("ok")
+            pyautogui.moveTo(5, 1064, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(31, 938, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(249, 420, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(110, 342, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(550, 245, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(566, 299, duration=0.7)
+            pyautogui.leftClick()
+            pyautogui.moveTo(1887, 15, duration=0.7)
+            pyautogui.leftClick()
+            time.sleep(0.5)
+            self.play("ready")
 
         elif cmd == 'show_devises':
             self.play("ok")
@@ -492,7 +513,6 @@ class Jarvis:
             self.play('subscribe')
             time.sleep(2.0)
             self.recorder.start()
-
 
         '''elif cmd == 'time_now':
             self.recorder.stop()
