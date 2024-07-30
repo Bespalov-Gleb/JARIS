@@ -47,6 +47,7 @@ class Message(ft.Row):
                     ft.Text(message, selectable=True),
                 ],
                 tight=True,
+
                 spacing=5,
             ),
         ]
@@ -108,7 +109,7 @@ def start_settings(page: ft.Page):
         page.update()
 
     def validate(e):
-        if all([user_login.value, user_password.value, openai_user.value, picovoice_user.value, eden_user.value]):
+        if all([user_login.value, user_password.value, picovoice_user.value, eden_user.value]):
             btn_reg.disabled = False
             btn_auth.disabled = False
         else:
@@ -131,7 +132,8 @@ def start_settings(page: ft.Page):
             openai.api_key = user.openai_token
             porcupine = pvporcupine.create(
                 access_key=user.picovoice_token,
-                keyword_paths=['jarvis'],
+                keyword_paths=[os.path.join(f"{CDIR}", "assets", "path", "path.ppn")],
+                model_path=os.path.join(f'{CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
                 sensitivities=[1]
             )
             recorder = PvRecorder(device_index=-1, frame_length=porcupine.frame_length)
@@ -233,7 +235,6 @@ def start_settings(page: ft.Page):
             ))
 
     def quit_j(e):
-        user_to_delete = db.get_query(User).filter(User.id == -1).one()
         user_to_delete = db.get_query(User).filter(User.id == -1).one()
         db.delete(user_to_delete)
         # c.execute("""DELETE FROM users WHERE id = -1""")
@@ -606,7 +607,7 @@ def start_settings(page: ft.Page):
         page.navigation_bar = ft.NavigationBar(
             destinations=[
                 ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Настройки'),
-                ft.NavigationDestination(icon=ft.icons.WECHAT, label='Джарвис'),
+                ft.NavigationDestination(icon=ft.icons.WECHAT, label='SVET'),
                 ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
                 ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
             ], on_change=navigate
