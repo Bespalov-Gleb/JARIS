@@ -27,6 +27,7 @@ from jarvis import Jarvis
 from colorama import *
 
 
+
 class Message(ft.Row):
     def __init__(self, user_name: str, message_type: str, message: str):
         super().__init__()
@@ -46,6 +47,7 @@ class Message(ft.Row):
                     ft.Text(message, selectable=True),
                 ],
                 tight=True,
+
                 spacing=5,
             ),
         ]
@@ -75,8 +77,9 @@ class Message(ft.Row):
         return colors_lookup[hash(user_name) % len(colors_lookup)]
 
 
+
 def start_settings(page: ft.Page):
-    page.title = 'Jarvis'
+    page.title = 'SVET'
     page.theme_mode = 'SYSTEM'
     CDIR = os.getcwd()
     page.window_width = 1900
@@ -84,9 +87,9 @@ def start_settings(page: ft.Page):
     page.window_resizable = False
     page.vertical_alignment = 'center'
     page.horizontal_alignment = 'center'
-    openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен опенаи')
-    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен пиковойс')
-    chrome_pass = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Путь к Chrome')
+    openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен OpenAI')
+    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен picovoice')
+    edenai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен EdenAI')
 
     db = Database()
 
@@ -106,7 +109,7 @@ def start_settings(page: ft.Page):
         page.update()
 
     def validate(e):
-        if all([user_login.value, user_password.value, openai_user.value, picovoice_user.value, eden_user.value]):
+        if all([user_login.value, user_password.value, picovoice_user.value, eden_user.value]):
             btn_reg.disabled = False
             btn_auth.disabled = False
         else:
@@ -129,7 +132,8 @@ def start_settings(page: ft.Page):
             openai.api_key = user.openai_token
             porcupine = pvporcupine.create(
                 access_key=user.picovoice_token,
-                keywords=['jarvis'],
+                keyword_paths=[os.path.join(f"{CDIR}", "assets", "path", "path.ppn")],
+                model_path=os.path.join(f'{CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
                 sensitivities=[1]
             )
             recorder = PvRecorder(device_index=-1, frame_length=porcupine.frame_length)
@@ -140,8 +144,9 @@ def start_settings(page: ft.Page):
             page.navigation_bar = ft.NavigationBar(
                 destinations=[
                     ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Настройки'),
-                    ft.NavigationDestination(icon=ft.icons.WECHAT, label='Джарвис'),
-                    ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды')
+                    ft.NavigationDestination(icon=ft.icons.WECHAT, label='SVET'),
+                    ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
+                    ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
                 ], on_change=navigate
             )
             page.add(jarvis_st)
@@ -192,7 +197,6 @@ def start_settings(page: ft.Page):
             ft.Text('Регистрация', size=25),
             user_login,
             user_password,
-            openai_user,
             picovoice_user,
             eden_user,
             btn_reg
@@ -209,22 +213,28 @@ def start_settings(page: ft.Page):
     ], alignment=ft.MainAxisAlignment.CENTER)
 
     def open_jarvis(e):
-        if ((openai_token.value == '') or (picovoice_token.value == '') or (chrome_pass.value == '')):
+        if (user_login.value == '') or (user_password.value == '') or (picovoice_token.value == '') or (edenai_token.value == ''):
             page.snack_bar = ft.SnackBar(ft.Text('Необходимо заполнить все поля'))
             page.snack_bar.open = True
             page.update()
         else:
-            f = open('user_settings.txt', 'w+')
-            if os.stat('user_settings.txt').st_size == 0:
-                f.write(openai_token.value + '\n')
-                f.write(picovoice_token.value + '\n')
-                f.write(chrome_pass.value)
-                set_but.text = 'Сохранено!'
-                f.close()
-                page.update()
+            user_to_delete = db.get_query(User).filter(User.id == -1).one()
+            log = db.get_query(User.login).filter(User.id == -1).one()
+            pas = db.get_query(User.password).filter(User.id == -1).one()
+            ot = db.get_query(User.openai_token).filter(User.id == -1).one()
+            pv = db.get_query(User.picovoice_token).filter(User.id == -1).one()
+            et = db.get_query(User.eden_token).filter(User.id == -1).one()
+            db.delete(user_to_delete)
+            db.add(User(
+                id=-1,
+                login=log,
+                password=pas,
+                openai_token=ot,
+                picovoice_token=pv,
+                edenai_token=et
+            ))
 
     def quit_j(e):
-        user_to_delete = db.get_query(User).filter(User.id == -1).one()
         user_to_delete = db.get_query(User).filter(User.id == -1).one()
         db.delete(user_to_delete)
         # c.execute("""DELETE FROM users WHERE id = -1""")
@@ -315,9 +325,70 @@ def start_settings(page: ft.Page):
             page.update()
 
     def check_jarvis(e):
+        page.clean()
+        panel_svet = ft.Container(
+            ft.Stack([
+                ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
+                svet,
+                start_btn,
+                ask_gpt_btn
+            ]), alignment=ft.Alignment(1, 1)
+        )
+        page.add(panel_svet)
+        page.update()
         kaldi_rec = vosk.KaldiRecognizer(model, samplerate)
         jarvis_object.start_jarvis(kaldi_rec)
 
+
+    def join_chat_click(e):
+        page.session.set("user_name", join_user_name)
+        new_message.prefix = ft.Text(f"{join_user_name}: ")
+        page.pubsub.send_all(Message(user_name=join_user_name, message=f"{join_user_name} начал новый диалог.",
+                                     message_type="login_message"))
+        page.update()
+
+    def send_message_click(e):
+        if new_message.value != "":
+            page.pubsub.send_all(Message(user_name=page.session.get("user_name"), message=new_message.value, message_type="chat_message"))
+            new_message.value = ""
+            new_message.focus()
+            chat.update()
+            page.update()
+
+    def on_message(message: Message):
+        if message.message_type == "chat_message":
+
+            m = Message(user_name=join_user_name, message=message.message, message_type='chat_message')
+            print(m)
+            chat.controls.append(m)
+            chat.update()
+            page.update()
+            gpt_answer(mes=message.message, id=1, e=0)
+        elif message.message_type == "login_message":
+            m = ft.Text(message.message, italic=True, color=ft.colors.WHITE, size=12)
+            chat.controls.append(m)
+            chat.update()
+            page.update()
+
+
+
+
+    def gpt_answer(e, mes, id):
+        if id == 0:
+            response = jarvis_object.main_connect(kaldi_rec=vosk.KaldiRecognizer(model, samplerate))
+            text = ''
+            for i in response:
+                text += str(i)
+        if id == 1:
+            response = gpt1(mes)
+            text = ''
+            for i in response:
+                text += str(i)
+        m = Message(user_name='SVET', message=text, message_type='chat_message')
+        #jarvis_object.tts(response)
+        chat.controls.append(m)
+        chat.update()
+        page.update()
 
 
 
@@ -351,11 +422,15 @@ def start_settings(page: ft.Page):
     start_btn = ft.Row([ft.Container(ft.ElevatedButton(text='Запуск', on_click=check_jarvis, bgcolor=ft.colors.BLUE_300,
                                                        color='black', height=70, width=200), height=800, width=1000,
                                      alignment=ft.alignment.Alignment(1.1, 0.7))])
+    ask_gpt_btn = ft.Row([ft.Container(ft.ElevatedButton(text='GPT', on_click=gpt_answer,bgcolor=ft.colors.BLUE_300,
+                                                       color='black', height=70, width=200), height=800, width=1000,
+                                     alignment=ft.alignment.Alignment(1.1, 1.0))])
 
     jarvis_st = ft.Row([ft.Column([ft.Stack([
         back_ground_jarvis,
         eye_jarvis,
-        start_btn
+        #start_btn,
+        ask_gpt_btn
 
 
 
@@ -365,9 +440,10 @@ def start_settings(page: ft.Page):
     sett = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([
         ft.Image(f'{CDIR}/assets/qt_material/photo1718366319.jpeg', width=300, height=300),
                     ft.Text('Настройки', size=25),
-                    openai_token,
+                    user_login,
+                    user_password,
                     picovoice_token,
-                    chrome_pass,
+                    edenai_token,
                     set_but,
                     quit_btn], alignment=ft.alignment.center_right)], alignment=ft.MainAxisAlignment.CENTER))
     panel_settings = ft.Container(
@@ -470,46 +546,6 @@ def start_settings(page: ft.Page):
 
     user = db.get_query(User).filter(User.id == -1).first()
 
-    def join_chat_click(e):
-        page.session.set("user_name", join_user_name)
-        new_message.prefix = ft.Text(f"{join_user_name}: ")
-        page.pubsub.send_all(Message(user_name=join_user_name, message=f"{join_user_name} начал новый диалог.",
-                                     message_type="login_message"))
-        page.update()
-    def gpt_in_chat(e, message):
-        new_message.prefix = ft.Text("SVET:")
-        page.pubsub.send_all(Message(user_name='SVET', message=f"{message}", message_type="login_message"))
-
-    def send_message_click(e):
-        if new_message.value != "":
-            page.pubsub.send_all(Message(user_name=page.session.get("user_name"), message=new_message.value, message_type="chat_message"))
-            new_message.value = ""
-            new_message.focus()
-            chat.update()
-            page.update()
-
-    def on_message(message: Message):
-        if message.message_type == "chat_message":
-            m = Message(user_name=join_user_name, message=message.message, message_type='chat_message')
-        elif message.message_type == "login_message":
-            m = ft.Text(message.message, italic=True, color=ft.colors.WHITE, size=12)
-        chat.controls.append(m)
-        chat.update()
-        page.update()
-
-        gpt_answer(message)
-
-    def gpt_answer(message: Message):
-        response = gpt1(message.message)
-        text = ''
-        for msg in response:
-            text += str(msg)
-
-        m = Message(user_name='SVET', message=text, message_type='chat_message')
-        jarvis_object.tts(response)
-        chat.controls.append(m)
-        chat.update()
-        page.update()
 
     page.pubsub.subscribe(on_message)
 
@@ -571,7 +607,7 @@ def start_settings(page: ft.Page):
         page.navigation_bar = ft.NavigationBar(
             destinations=[
                 ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Настройки'),
-                ft.NavigationDestination(icon=ft.icons.WECHAT, label='Джарвис'),
+                ft.NavigationDestination(icon=ft.icons.WECHAT, label='SVET'),
                 ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
                 ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
             ], on_change=navigate
