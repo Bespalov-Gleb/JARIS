@@ -2,6 +2,7 @@ import flet as ft
 from dotenv import load_dotenv
 import os
 import queue
+from screeninfo import get_monitors
 
 # from ctypes import POINTER, cast
 
@@ -82,9 +83,10 @@ def start_settings(page: ft.Page):
     page.title = 'SVET'
     page.theme_mode = 'SYSTEM'
     CDIR = os.getcwd()
-    page.window_width = 1900
-    page.window_height = 1100
-    page.window_resizable = False
+    monitor = get_monitors()[0]
+    page.window_width = monitor.width
+    page.window_height = monitor.height
+    page.window_resizable = True
     page.vertical_alignment = 'center'
     page.horizontal_alignment = 'center'
     openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен OpenAI')
