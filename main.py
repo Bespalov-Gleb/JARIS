@@ -433,10 +433,7 @@ def start_settings(page: ft.Page):
         eye_jarvis,
         #start_btn,
         ask_gpt_btn
-
-
-
-                                             ])]
+                                ])]
                                   )])
 
     sett = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([

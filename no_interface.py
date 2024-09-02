@@ -1,3 +1,5 @@
+#Это версия без интерфейса, без подключения базы данных для одного пользователя
+
 import json
 import os
 import random
@@ -5,32 +7,21 @@ import struct
 import time
 import traceback
 import webbrowser
-from ctypes import cast
 import platform
 
-import pyautogui
-from _ctypes import POINTER
-#from comtypes import CLSCTX_ALL
+import vosk
 from g4f.client import Client
 import googlesearch
 import pvporcupine
 import simpleaudio as sa
 import sounddevice as sd
 import yaml
-#from comtypes import CLSCTX_ALL
 from fuzzywuzzy import fuzz
 from pvrecorder import PvRecorder
-#from pycaw.api.endpointvolume import IAudioEndpointVolume
-#from pycaw.utils import AudioUtilities
 from rich import print
 from PyQt6 import QtWidgets
 import sys
 import requests
-
-
-from db_pkg.database import Database
-from db_pkg.models import User
-import chat_window
 from gpt import gpt1
 
 
@@ -55,7 +46,6 @@ class Jarvis:
         )
         self.recorder = PvRecorder(device_index=-1, frame_length=self.porcupine.frame_length)
 
-    #подключение к edenai
     def tts(self, text):
         headers = {
             "Authorization": f"Bearer {self.eden_token}"}
@@ -76,7 +66,7 @@ class Jarvis:
             file.write(requests.get(audio_url).content)
             file.close()
         os.replace(f'{os.getcwd()}/moment_file.wav', f'{os.getcwd()}/assets/sound')
-    #запуск программы ГП
+
     def start_jarvis(self, kaldi_rec):
         self.recorder.start()
         print('Using device: %s' % self.recorder.selected_device)
@@ -113,7 +103,7 @@ class Jarvis:
             except Exception as err:
                 print(f"Unexpected {err=}, {type(err)=}")
                 raise
-    #Подключение к gpt
+
     def gpt_answer(self, question):
         client = Client()
         res = ''
@@ -136,7 +126,6 @@ class Jarvis:
 
         return self.va_respond(json.loads(kaldi_rec.Result())["text"], type='gpt')
 
-    #Включение аудиофайлов
     def play(self, phrase, wait_done=True):
         filename = os.path.join(self.CDIR, "assets", "svet_audio")
         if phrase == "greet":  # for py 3.8
@@ -206,7 +195,7 @@ class Jarvis:
             # print("END")
             # time.sleep(0.5)
             self.recorder.start()
-    #Распознавание команд
+
     def va_respond(self, voice: str, type: str):
         print(f"Распознано: {voice}")
 
@@ -294,6 +283,7 @@ class Jarvis:
             content = info
             file.write(content)
         file.close()
+
     def execute_cmd(self, cmd: str, voice: str):
         if cmd == 'open_browser':
             webbrowser.open('google.org')
@@ -329,44 +319,6 @@ class Jarvis:
 
         elif cmd == 'stupid':
             self.play("stupid")
-
-        elif cmd == 'switch_to_headphones':
-            self.play("ok")
-            pyautogui.moveTo(5, 1064, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(31, 938, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(249, 420, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(110, 342, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(550, 245, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(607, 198, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(1887, 15, duration=0.7)
-            pyautogui.leftClick()
-            time.sleep(0.5)
-            self.play("ready")
-    
-        elif cmd == 'switch_to_dynamics':
-            self.play("ok")
-            pyautogui.moveTo(5, 1064, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(31, 938, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(249, 420, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(110, 342, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(550, 245, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(566, 299, duration=0.7)
-            pyautogui.leftClick()
-            pyautogui.moveTo(1887, 15, duration=0.7)
-            pyautogui.leftClick()
-            time.sleep(0.5)
-            self.play("ready")
 
         elif cmd == 'show_devises':
             self.play("ok")
@@ -523,68 +475,16 @@ class Jarvis:
             time.sleep(2.0)
             self.recorder.start()
 
-        elif cmd == 'say_hello':
-            self.recorder.stop()
-            self.play('subscribe')
-            time.sleep(2.0)
-            self.recorder.start()
-
-        elif cmd == 'create_note':
-            self.recorder.stop()
-            #аудио файл
-            self.va_respond(voice, 'note')
-            #аудио файл
-            print('Записала')
-            self.recorder.start()
-
-        elif cmd == 'view_note':
-            self.recorder.stop()
-            if os.path.exists('notes.txt'):
-                with open('notes', 'r') as file:
-                    #TODO заменить принт на TTS
-                    print(file.read())
-            else:
-                pass
-                #аудиофайл
-            self.recorder.start()
-
-        elif cmd == 'clean':
-            os.remove('C:\\Users\\ArdorPC\\Documents\\GitHub\\JARIS\\notes.txt')
-            with open('notes.txt', 'w') as file:
-                pass
-            file.close()
-            self.recorder.stop()
-            #аудиофайл
-            self.recorder.start()
-
-        elif cmd == 'screen':
-            screen = pyautogui.screenshot()
-            screen.save('screenshot.png')
-            self.recorder.stop()
-            #аудиофайл
-            self.recorder.start()
 
 
-
-        '''elif cmd == 'time_now':
-            self.recorder.stop()
-            strtime = datetime.datetime.now().strftime('%H:%M')
-            step = strtime.split(':')
-            hour = num2words.num2words(int(step[0]), lang='ru')
-            minutes = num2words.num2words(int(step[1]), lang='ru')
-            if step[1][0] == 0:
-                minutes = 'ноль' + ' ' + minutes
-            if hour == 'один':
-                hour = 'час'
-            elif hour == 'ноль':
-                hour = 'двенадцать'
-            text = ('Сейчас' + ' ' + hour + ' ' + minutes)
-            tts(text=text)
-            time.sleep(2.0)
-            self.play('moment_file')
-            os.remove('assets/sound/moment_file.wav')
-            self.recorder.start()'''
 
 
 if __name__ == '__main__':
-    print('Работай через приложение пж')
+    model = vosk.Model("assets\\model_small")
+    samplerate = 16000
+    kaldi_rec = vosk.KaldiRecognizer(model, samplerate)
+    PICOVOICE_TOKEN = 'ltRSIRF80lF1Az7esIb8ENGAvfYt1EdGM9UP3xxvu0f56mdGJf0f+g=='
+    EDEN_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiN2U3NWFmYWMtMDFlYS00N2I2LWE5YzItMGViZTE4NGQ4NDNjIiwidHlwZSI6ImFwaV90b2tlbiJ9.x0l0jnypRoTRaRnA4EB3tVDI4Shc6OzBk97L0B2y4Lw'
+    jarvis_object = Jarvis(picovoice_token=PICOVOICE_TOKEN, eden_token=EDEN_TOKEN)
+    jarvis_object.start_jarvis(kaldi_rec)
+

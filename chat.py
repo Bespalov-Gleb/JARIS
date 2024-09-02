@@ -1,6 +1,3 @@
-from db_pkg.database import Database
-from db_pkg.models import User
-#TEST 12345
+import subprocess
 
-db = Database()
-utd = db.get_query(User).filter(User.id == -1).one()
+subprocess.Popen('cmd.exe')
