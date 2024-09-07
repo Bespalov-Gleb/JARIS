@@ -2,11 +2,13 @@ import json
 import os
 import random
 import struct
+import subprocess
 import time
 import traceback
 import webbrowser
 from ctypes import cast
 import platform
+import openai
 
 import pyautogui
 from _ctypes import POINTER
@@ -47,12 +49,19 @@ class Jarvis:
         self.VA_CMD_LIST = yaml.safe_load(open('commands.yaml', 'rt', encoding='utf8'), )
         self.CDIR = os.getcwd()
         path_file = "path_win.ppn" if platform.system() == "Windows" else "path_mac.ppn"
-        self.porcupine = pvporcupine.create(
-            access_key=self.picovoice_token,
-            keyword_paths=[os.path.join(f"{self.CDIR}", "assets", "path", path_file)],
-            model_path=os.path.join(f'{self.CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
-            sensitivities=[1]
-        )
+        try:
+            self.porcupine = pvporcupine.create(
+                access_key=self.picovoice_token,
+                keyword_paths=[os.path.join(f"{self.CDIR}", "assets", "path", path_file)],
+                model_path=os.path.join(f'{self.CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
+                sensitivities=[1]
+            )
+        except:
+            db = Database()
+            utd = db.get_query(User).filter(User.id == -1).one()
+            db.delete(utd)
+            war = QtWidgets.QMessageBox.warning(title='Error!',
+                                                text='Срок действия вашего аккаунта истёк! Для продолжения зарегистрируйте новый токен picovoice.')
         self.recorder = PvRecorder(device_index=-1, frame_length=self.porcupine.frame_length)
 
     #подключение к edenai
@@ -115,17 +124,8 @@ class Jarvis:
                 raise
     #Подключение к gpt
     def gpt_answer(self, question):
-        client = Client()
-        res = ''
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": f'{question}'}],
-            stream=True
-
-        )
-        for mes in response:
-            res += mes
-        return res
+        #воткнуть сюда подключение к openai
+        pass
 
     # self.play(f'{CDIR}\\sound\\ok{random.choice([1, 2, 3, 4])}.wav')
 
@@ -291,7 +291,9 @@ class Jarvis:
     def create_note(self, voice):
         info = voice.split(' ')[3:]
         with open('notes.txt', 'w') as file:
-            content = info
+            content = ''
+            for i in range(len(info)):
+                content = content + info[i] + ' '
             file.write(content)
         file.close()
     def execute_cmd(self, cmd: str, voice: str):
@@ -540,9 +542,9 @@ class Jarvis:
         elif cmd == 'view_note':
             self.recorder.stop()
             if os.path.exists('notes.txt'):
-                with open('notes', 'r') as file:
+                with open('notes.txt', 'r') as file:
                     #TODO заменить принт на TTS
-                    print(file.read())
+                    print(str(file.read()))
             else:
                 pass
                 #аудиофайл
@@ -563,6 +565,9 @@ class Jarvis:
             self.recorder.stop()
             #аудиофайл
             self.recorder.start()
+
+        elif cmd == 'sleep':
+            os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
 
 
 

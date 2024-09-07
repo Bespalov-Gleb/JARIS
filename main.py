@@ -25,6 +25,7 @@ from db_pkg.database import Database
 from db_pkg.models import User
 from gpt import gpt1
 from jarvis import Jarvis
+from PyQt6 import QtWidgets
 from colorama import *
 
 
@@ -134,7 +135,7 @@ def start_settings(page: ft.Page):
             openai.api_key = user.openai_token
             porcupine = pvporcupine.create(
                 access_key=user.picovoice_token,
-                keyword_paths=[os.path.join(f"{CDIR}", "assets", "path", "path.ppn")],
+                keyword_paths=[os.path.join(f"{CDIR}", "assets", "path", "path_win.ppn")],
                 model_path=os.path.join(f'{CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
                 sensitivities=[1]
             )
