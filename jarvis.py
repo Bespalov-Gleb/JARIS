@@ -32,7 +32,6 @@ import requests
 
 from db_pkg.database import Database
 from db_pkg.models import User
-import chat_window
 from gpt import gpt1
 
 
