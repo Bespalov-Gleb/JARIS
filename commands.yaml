@@ -11,28 +11,40 @@
 - пора спать
 - отключение
 - отключение отключение
+- shutdown
+- That's enough for today
+- It's time to sleep
 open_browser:
 - открой браузер
 - запусти браузер
 - открой гугл хром
 - гугл хром
+- open browser
+- open google chrome
 open_google:
 - открой гугл
-- гугл
+- google
 - запусти гугл
+- open google
 open_youtube:
 - открой ютуб
 - ютуб
 - запусти ютуб
+- youtube
+- open youtube
 sound_off:
 - выключи звук
 - беззвучный режим
 - режим без звука
 - отключи звук
+- turn off the sound
+- silent mode
 sound_on:
 - включи звук
 - режим со звуком
 - верни звук
+- turn on the sound
+- sound mode
 stupid:
 - ты дурак
 - ты дебил
@@ -75,11 +87,19 @@ thanks:
 - умничка
 - люблю тебя
 - хорош
+- thank you
+- you are cool
+- i love you
+- nice work
+- thanks
 power_off:
 - выключи компьютер
 - завершение работы
 - мы закончили
 - рабочий день окончен
+- turn off the computer
+- complete work
+- we're done
 find_files:
   - найди файл
   - поиск файла
@@ -87,6 +107,9 @@ find_files:
   - найди в проводнике
   - анализ системы
   - найди документ
+  - find file
+  - find the document
+  - system analysis
 find_google:
   - найди в интернете
   - найди информацию о
@@ -95,6 +118,8 @@ find_google:
   - поищи в браузере
   - найди в браузере
   - найди в гугл
+  - find on Google
+  - find on browser
 make_new_dir:
   - создать папку
   - новая папка
@@ -102,24 +127,34 @@ make_new_dir:
   - создать новую папку
   - создать новый каталог
   - папка
+  - create folder
+  - make folder
+  - create direction
 make_new_file:
   - создать файл
   - новый файл
   - создать новый файл
   - файл
+  - file
+  - new file
 delete_dir:
   - удалить каталог
   - удали папку
+  - delete direction
+  - delete folder
 delete_file:
   - удали файл
   - удалить файл
   - убери ненужный файл
   - надо удалить файл
   - файл нам больше не нужен
+  - delete file
 congratilations:
   - мы справились
   - у нас получилось
   - все работает
+  - everything works
+  - we did it
 VK:
   - открой вконтакте
   - открой вк
@@ -155,20 +190,25 @@ say_hello:
   - передай привет
 create_note:
   - запиши в заметки
+  - create note
 view_note:
   - что у нас в заметках
   - прочитай заметки
   - что мы записали
+  - read the notes
 screen:
   - сделай скрин
   - сделай скриншот
   - скриншот
   - снимок
   - снимок экрана
+  - screenshot
 clean:
   - очисти заметки
+  - clear the notes
 sleep:
   - спящий режим
+  - sleep mode
 
 
 

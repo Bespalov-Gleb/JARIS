@@ -52,7 +52,7 @@ class Jarvis:
             self.porcupine = pvporcupine.create(
                 access_key=self.picovoice_token,
                 keyword_paths=[os.path.join(f"{self.CDIR}", "assets", "path", path_file)],
-                model_path=os.path.join(f'{self.CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
+                #model_path=os.path.join(f'{self.CDIR}', 'assets', 'path', 'porcupine_params_ru.pv'),
                 sensitivities=[1]
             )
         except:
@@ -137,59 +137,59 @@ class Jarvis:
 
     #Включение аудиофайлов
     def play(self, phrase, wait_done=True):
-        filename = os.path.join(self.CDIR, "assets", "svet_audio")
+        filename = os.path.join(self.CDIR, "assets", "svet_audio_en")
         if phrase == "greet":  # for py 3.8
-            filename = os.path.join(filename, f"{random.choice(['welcome', 'i_here', 'attention', 'hear_me'])}.wav")
+            filename = os.path.join(filename, f"{random.choice(['here', 'ears', 'listen'])}.wav")
         elif phrase == "ok":
-            filename = os.path.join(filename, f"{random.choice(['done', 'yep', 'contact'])}.wav")
+            filename = os.path.join(filename, f"{random.choice(['done', 'second'])}.wav")
         elif phrase == "not_found":
-            filename = os.path.join(filename, f"{random.choice(['bad_hear', 'can_you_rep'])}.wav")
+            filename = os.path.join(filename, f"{random.choice(['didnt_hear', 'repeate'])}.wav")
         elif phrase == "thanks":
-            filename = os.path.join(filename, "thanks.wav")
+            filename = os.path.join(filename, "service.wav")
         elif phrase == "run":
-            filename = os.path.join(filename, "listen.wav")
+            filename = os.path.join(filename, "welcome.wav")
         elif phrase == "stupid":
-            filename = os.path.join(filename, "just_learn.wav")
+            filename = os.path.join(filename, "repeate.wav")
         elif phrase == "ready":
             filename = os.path.join(filename, "ready.wav")
         elif phrase == "off":
-            filename = os.path.join(filename, f"{random.choice(['power_off.wav', 'see_u.wav', 'see_u_later.wav'])}")
+            filename = os.path.join(filename, f"{random.choice(['turn_off.wav', 'c_u.wav'])}")
         elif phrase == "loading":
-            filename = os.path.join(filename, f"{random.choice(['check_sys', 'start_check'])}.wav")
+            filename = os.path.join(filename, f"{random.choice(['check', 'see_system'])}.wav")
         elif phrase == "result":
             filename = os.path.join(filename, "done.wav")
         elif phrase == 'new_fol':
-            filename = os.path.join(filename, "folder_create.wav")
+            filename = os.path.join(filename, "create_fol.wav")
         elif phrase == 'new_file':
-            filename = os.path.join(filename, 'file_create.wav')
+            filename = os.path.join(filename, 'create_file.wav')
         elif phrase == 'delete':
             filename = os.path.join(filename, 'done.wav')
         elif phrase == 'cong':
             filename = os.path.join(filename, f'{random.choice(["congratilations.wav", "glad.wav"])}')
         elif phrase == 'gpt_start':
-            filename = os.path.join(filename, 'larger_find.wav')
+            filename = os.path.join(filename, 'large_s.wav')
         elif phrase == 'dir_name':
-            filename = os.path.join(filename, 'another_name_fol.wav')
+            filename = os.path.join(filename, 'folder_excist.wav')
         elif phrase == 'file_name':
-            filename = os.path.join(filename, 'another_name_file.wav')
+            filename = os.path.join(filename, 'name_in_use.wav')
         elif phrase == 'is_found':
-            filename = os.path.join(filename, 'check_done.wav')
+            filename = os.path.join(filename, 'done.wav')
         elif phrase == 'nfs':
-            filename = os.path.join(filename, 'nfs.wav')
+            filename = os.path.join(filename, f'{random.choice(["cfa.wav", "cant_answer.wav"])}')
         elif phrase == 'something_else':
-            filename = os.path.join(filename, f'{random.choice(["dfa.wav", "strange.wav", "not_found.wav"])}')
+            filename = os.path.join(filename, f'{random.choice(["cfa.wav", "cant_answer.wav"])}')
         elif phrase == 'watching':
-            filename = os.path.join(filename, 'glad_watching.wav')
+            filename = os.path.join(filename, 'view.wav')
         elif phrase == 'youtube':
-            filename = os.path.join(filename, 'check_youtube.wav')
+            filename = os.path.join(filename, 'youtube.wav')
         elif phrase == 'not_found':
-            filename = os.path.join(filename, 'strange.wav')
+            filename = os.path.join(filename, 'cfa.wav')
         elif phrase == 'moment_file':
             filename = os.path.join(filename, "moment_file.wav")
         elif phrase == 'subscribe':
             filename = os.path.join(filename, 'subscribe.wav.wav')
         elif phrase == 'switch_done':
-            filename = os.path.join(filename, 'swith_done.wav')
+            filename = os.path.join(filename, 'switch.wav')
 
         if wait_done:
             self.recorder.stop()
