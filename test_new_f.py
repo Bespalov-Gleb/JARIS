@@ -1,19 +1,15 @@
-import subprocess
+from db_pkg.database import Database
+from db_pkg.models import User
 
-def toggle_bluetooth(state):
-    try:
-        if state == "on":
-            # Включаем Bluetooth
-            subprocess.run(["powershell", "-Command", "Get-PnpDevice | Where-Object { $_.FriendlyName -like '*Bluetooth*' } | Enable-PnpDevice -Confirm:$false"], check=True)
-            print("Bluetooth включен")
-        elif state == "off":
-            # Отключаем Bluetooth
-            subprocess.run(["powershell", "-Command", "Get-PnpDevice | Where-Object { $_.FriendlyName -like '*Bluetooth*' } | Disable-PnpDevice -Confirm:$false"], check=True)
-            print("Bluetooth отключен")
-        else:
-            print("Укажите 'on' или 'off'")
-    except subprocess.CalledProcessError as e:
-        print(f"Ошибка: {e}")
-
-# Включить Bluetooth
-toggle_bluetooth("on")
+db = Database()
+user_to_add = User(
+            id=None,
+            login='HYI',
+            password='12345',
+            openai_token='',
+            picovoice_token='PICO',
+            eden_token="EDEN",
+            current_lang='en'
+        )
+db.add(user_to_add)
+print(db.get_query(User).filter(User.login == 'HYI').all())

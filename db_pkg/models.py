@@ -24,6 +24,7 @@ class User(Base):
     openai_token = Column(String, nullable=False)
     picovoice_token = Column(String, nullable=False)
     eden_token = Column(String, nullable=False)
+    current_lang = Column(String, nullable=False)
 
     def __repr__(self):
         return f'id: {self.id} login: {self.login}'
