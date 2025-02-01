@@ -7,7 +7,7 @@ from screeninfo import get_monitors
 # from ctypes import POINTER, cast
 
 import multiprocessing
-import openai
+
 import pvporcupine
 
 import vosk
@@ -23,7 +23,6 @@ from pvrecorder import PvRecorder
 
 from db_pkg.database import Database
 from db_pkg.models import User
-from gpt import gpt1
 from jarvis import Jarvis
 from PyQt6 import QtWidgets
 from colorama import *
@@ -316,12 +315,12 @@ def start_settings(page: ft.Page):
             else:
                 page.add(panel_svet_ru)
                 page.update()
-        elif index == 2:
+        '''elif index == 2:
             page.add(
                 bord,
                 message_line
             )
-            page.update()
+            page.update()'''
 
         '''elif index == 2:
             pass
@@ -361,7 +360,7 @@ def start_settings(page: ft.Page):
                 ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
                 svet,
                 start_btn_en,
-                ask_gpt_btn
+
             ]), alignment=ft.Alignment(1, 1)
         )
         page.add(panel_svet_en)
@@ -393,32 +392,13 @@ def start_settings(page: ft.Page):
             chat.controls.append(m)
             chat.update()
             page.update()
-            gpt_answer(mes=message.message, id=1, e=0)
+
         elif message.message_type == "login_message":
             m = ft.Text(message.message, italic=True, color=ft.colors.WHITE, size=12)
             chat.controls.append(m)
             chat.update()
             page.update()
 
-
-
-
-    def gpt_answer(e, mes, id):
-        if id == 0:
-            response = jarvis_object.main_connect(kaldi_rec=vosk.KaldiRecognizer(model, samplerate))
-            text = ''
-            for i in response:
-                text += str(i)
-        if id == 1:
-            response = gpt1(mes)
-            text = ''
-            for i in response:
-                text += str(i)
-        m = Message(user_name='SVET', message=text, message_type='chat_message')
-        #jarvis_object.tts(response)
-        chat.controls.append(m)
-        chat.update()
-        page.update()
 
     def language_change(e):
         if drop.value == 'English':
@@ -493,15 +473,15 @@ def start_settings(page: ft.Page):
         [ft.Container(ft.ElevatedButton(text='Запуск', on_click=check_jarvis, bgcolor=ft.colors.BLUE_300,
                                         color='black', height=70, width=200), height=800, width=1000,
                       alignment=ft.alignment.Alignment(1.1, 0.7))])
-    ask_gpt_btn = ft.Row([ft.Container(ft.ElevatedButton(text='GPT', on_click=gpt_answer,bgcolor=ft.colors.BLUE_300,
+    '''ask_gpt_btn = ft.Row([ft.Container(ft.ElevatedButton(text='GPT', on_click=gpt_answer,bgcolor=ft.colors.BLUE_300,
                                                        color='black', height=70, width=200), height=800, width=1000,
-                                     alignment=ft.alignment.Alignment(1.1, 1.0))])
+                                     alignment=ft.alignment.Alignment(1.1, 1.0))])'''
 
     jarvis_st = ft.Row([ft.Column([ft.Stack([
         back_ground_jarvis,
         eye_jarvis,
         start_btn_en,
-        ask_gpt_btn])]
+        ])]
                                   )])
 
     drop = ft.Dropdown(width=300,

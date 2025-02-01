@@ -32,7 +32,6 @@ from sqlalchemy.sql.functions import user
 
 from db_pkg.database import Database
 from db_pkg.models import User
-from gpt import gpt1
 
 
 # TODO: переделать команду для чата: открывает нужную вкладку, печатает ответ и произносит его
@@ -316,13 +315,6 @@ class Jarvis:
             else:
                 self.execute_cmd(cmd['cmd'], voice)
                 return True, voice
-
-        elif type == 'gpt':
-            response = gpt1(voice)
-            text = ''
-            for msg in response:
-                text += str(msg)
-            return text
 
         elif type == 'note':
             self.create_note(voice)
