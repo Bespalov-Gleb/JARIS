@@ -7,7 +7,7 @@ from screeninfo import get_monitors
 # from ctypes import POINTER, cast
 
 import multiprocessing
-import openai
+
 import pvporcupine
 
 import vosk
@@ -23,7 +23,6 @@ from pvrecorder import PvRecorder
 
 from db_pkg.database import Database
 from db_pkg.models import User
-from gpt import gpt1
 from jarvis import Jarvis
 from PyQt6 import QtWidgets
 from colorama import *
@@ -90,9 +89,13 @@ def start_settings(page: ft.Page):
     page.window_resizable = True
     page.vertical_alignment = 'center'
     page.horizontal_alignment = 'center'
+    page.locale_configuration = ft.LocaleConfiguration(
+        supported_locales=[ft.Locale('en', 'US'), ft.Locale('ru','RU')],
+        current_locale=ft.Locale('en','US')
+    )
     openai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен OpenAI')
-    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен picovoice')
-    edenai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Токен EdenAI')
+    picovoice_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Token Picovoice')
+    edenai_token = ft.TextField(value='', width=300, text_align=ft.TextAlign.LEFT, label='Token EdenAI')
 
     db = Database()
 
@@ -100,19 +103,20 @@ def start_settings(page: ft.Page):
     def register(e):
         user_to_add = User(
             id=None,
-            login=user_login.value,
-            password=user_password.value,
+            login=user_login_en.value,
+            password=user_password_en.value,
             openai_token=openai_user.value,
             picovoice_token=picovoice_user.value,
-            eden_token=eden_user.value
+            eden_token=eden_user.value,
+            current_lang='en'
         )
         db.add(user_to_add)
 
-        btn_reg.text = 'Зарегестрировано!'
+        btn_reg.text = 'Registered!'
         page.update()
 
     def validate(e):
-        if all([user_login.value, user_password.value, picovoice_user.value, eden_user.value]):
+        if all([user_login_en.value, user_password_en.value, picovoice_user.value, eden_user.value]):
             btn_reg.disabled = False
             btn_auth.disabled = False
         else:
@@ -146,9 +150,9 @@ def start_settings(page: ft.Page):
             page.clean()
             page.navigation_bar = ft.NavigationBar(
                 destinations=[
-                    ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Настройки'),
+                    ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Settings'),
                     ft.NavigationDestination(icon=ft.icons.WECHAT, label='SVET'),
-                    ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
+                    #ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Commands'),
                     ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
                 ], on_change=navigate
             )
@@ -160,7 +164,8 @@ def start_settings(page: ft.Page):
                 password=user.password,
                 openai_token=user.openai_token,
                 picovoice_token=user.picovoice_token,
-                eden_token=user.eden_token
+                eden_token=user.eden_token,
+                current_lang='en'
             )
             db.add(user_to_add)
 
@@ -168,7 +173,7 @@ def start_settings(page: ft.Page):
 
             return recorder, porcupine
         else:
-            page.snack_bar = ft.SnackBar(ft.Text('Неверный логин или пароль!'))
+            page.snack_bar = ft.SnackBar(ft.Text('Invalid username or password!'))
             page.snack_bar.open = True
             page.update()
 
@@ -183,23 +188,27 @@ def start_settings(page: ft.Page):
 
 
 
-    user_login = ft.TextField(label='Логин', width=300, on_change=validate)
-    user_password = ft.TextField(label='Пароль', width=300, password=True, on_change=validate)
+    user_login_en = ft.TextField(label='Login', width=300, on_change=validate)
+    user_login_ru = ft.TextField(label='Логин', width=300, on_change=validate)
 
-    user_login_a = ft.TextField(label='Логин', width=300, on_change=validate_a)
-    user_password_a = ft.TextField(label='Пароль', width=300, password=True, on_change=validate_a)
+    user_password_en = ft.TextField(label='Password', width=300, password=True, on_change=validate)
+    user_password_ru = ft.TextField(label='Пароль', width=300, password=True, on_change=validate)
 
-    openai_user = ft.TextField(label='Токен OpenAI', width=300, on_change=validate)
-    picovoice_user = ft.TextField(label='Токен Picovoice', width=300, on_change=validate)
-    eden_user = ft.TextField(label='Токен EdenAI', width=300, on_change=validate)
-    btn_reg = ft.OutlinedButton(text='Регистраця', width=300, on_click=register, disabled=True)
-    btn_auth = ft.OutlinedButton(text='Авторизация', width=300, on_click=auth_user, disabled=True)
+
+    user_login_a = ft.TextField(label='Login', width=300, on_change=validate_a)
+    user_password_a = ft.TextField(label='Password', width=300, password=True, on_change=validate_a)
+
+    openai_user = ft.TextField(label='Token OpenAI', width=300, on_change=validate)
+    picovoice_user = ft.TextField(label='Token Picovoice', width=300, on_change=validate)
+    eden_user = ft.TextField(label='Token EdenAI', width=300, on_change=validate)
+    btn_reg = ft.OutlinedButton(text='Registration', width=300, on_click=register, disabled=True)
+    btn_auth = ft.OutlinedButton(text='Authorization', width=300, on_click=auth_user, disabled=True)
 
     panel_register = ft.Row([
         ft.Column([
-            ft.Text('Регистрация', size=25),
-            user_login,
-            user_password,
+            ft.Text('Registration', size=25),
+            user_login_en,
+            user_password_en,
             picovoice_user,
             eden_user,
             btn_reg
@@ -208,7 +217,7 @@ def start_settings(page: ft.Page):
 
     panel_auth = ft.Row([
         ft.Column([
-            ft.Text('Авторизация', size=25),
+            ft.Text('Authorization', size=25),
             user_login_a,
             user_password_a,
             btn_auth
@@ -216,8 +225,8 @@ def start_settings(page: ft.Page):
     ], alignment=ft.MainAxisAlignment.CENTER)
 
     def open_jarvis(e):
-        if (user_login.value == '') or (user_password.value == '') or (picovoice_token.value == '') or (edenai_token.value == ''):
-            page.snack_bar = ft.SnackBar(ft.Text('Необходимо заполнить все поля'))
+        if (user_login_en.value == '') or (user_password_en.value == '') or (picovoice_token.value == '') or (edenai_token.value == ''):
+            page.snack_bar = ft.SnackBar(ft.Text('All fields must be filled in'))
             page.snack_bar.open = True
             page.update()
         else:
@@ -246,15 +255,19 @@ def start_settings(page: ft.Page):
         page.add(panel_auth)
         page.navigation_bar = ft.NavigationBar(
             destinations=[
-                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER, label='Регистрация'),
-                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER_OUTLINED, label='Авторизация')
+                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER, label='Registration'),
+                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER_OUTLINED, label='Authorization')
             ], on_change=navigate_reg
         )
         page.update()
 
 
-    set_but = ft.ElevatedButton(text='Сохранить', width=300, on_click=open_jarvis)
-    quit_btn = ft.ElevatedButton(text='Выйти из аккаунта', width=300, icon=ft.icons.EXIT_TO_APP, on_click=quit_j)
+    set_but_en = ft.ElevatedButton(text='Save', width=300, on_click=open_jarvis)
+    set_but_ru = ft.ElevatedButton(text='Сохранить', width=300, on_click=open_jarvis)
+
+    quit_btn_en = ft.ElevatedButton(text='Log out of your account', width=300, icon=ft.icons.EXIT_TO_APP, on_click=quit_j)
+    quit_btn_ru = ft.ElevatedButton(text='Log out of your account', width=300, icon=ft.icons.EXIT_TO_APP, on_click=quit_j)
+
 
     def on_hower_inter(e):
         if internet_com.opacity == False:
@@ -287,13 +300,31 @@ def start_settings(page: ft.Page):
     def navigate(e):
         index = page.navigation_bar.selected_index
         page.clean()
+        user = db.get_query(User).filter(User.id == -1).first()
         if index == 0:
-            page.add(panel_settings)
+            if user.current_lang == 'en':
+                page.add(panel_settings_en)
+                page.update()
+            else:
+                page.add(panel_settings_ru)
+                page.update()
         elif index == 1:
-            page.add(panel_svet)
-            page.update()
-        elif index == 2:
-            page.add(ft.Row([ft.Column([ft.Text('Команды', size=45)], alignment=ft.MainAxisAlignment.START)], alignment=ft.MainAxisAlignment.CENTER),
+            if user.current_lang == 'en':
+                page.add(panel_svet_en)
+                page.update()
+            else:
+                page.add(panel_svet_ru)
+                page.update()
+        '''elif index == 2:
+            page.add(
+                bord,
+                message_line
+            )
+            page.update()'''
+
+        '''elif index == 2:
+            pass
+            page.add(ft.Row([ft.Column([ft.Text('Commands', size=45)], alignment=ft.MainAxisAlignment.START)], alignment=ft.MainAxisAlignment.CENTER),
                      ft.Row([ft.Text('aaaaaaaaaaaaaaaaa', opacity=False, size=40)]),
                      ft.Row([ft.Text('aaaaaaaaaaaaaaaaa', opacity=False, size=40)]),
                      ft.Row([ft.Column([
@@ -319,13 +350,8 @@ def start_settings(page: ft.Page):
                             ft.Container(width=300, height=300, content=learn_com, on_hover=on_hower_learn)
                         ])], alignment=ft.MainAxisAlignment.CENTER))
 
-            page.update()
-        elif index == 3:
-            page.add(
-                bord,
-                message_line
-            )
-            page.update()
+            page.update()'''
+
 
     def check_jarvis(e):
         page.clean()
@@ -333,20 +359,20 @@ def start_settings(page: ft.Page):
             ft.Stack([
                 ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
                 svet,
-                start_btn,
-                ask_gpt_btn
+                start_btn_en,
+
             ]), alignment=ft.Alignment(1, 1)
         )
-        page.add(panel_svet)
+        page.add(panel_svet_en)
         page.update()
         kaldi_rec = vosk.KaldiRecognizer(model, samplerate)
-        jarvis_object.start_jarvis(kaldi_rec)
+        jarvis_object.start_jarvis(kaldi_rec=kaldi_rec)
 
 
     def join_chat_click(e):
         page.session.set("user_name", join_user_name)
         new_message.prefix = ft.Text(f"{join_user_name}: ")
-        page.pubsub.send_all(Message(user_name=join_user_name, message=f"{join_user_name} начал новый диалог.",
+        page.pubsub.send_all(Message(user_name=join_user_name, message=f"{join_user_name} start new dialog.",
                                      message_type="login_message"))
         page.update()
 
@@ -366,7 +392,7 @@ def start_settings(page: ft.Page):
             chat.controls.append(m)
             chat.update()
             page.update()
-            gpt_answer(mes=message.message, id=1, e=0)
+
         elif message.message_type == "login_message":
             m = ft.Text(message.message, italic=True, color=ft.colors.WHITE, size=12)
             chat.controls.append(m)
@@ -374,33 +400,51 @@ def start_settings(page: ft.Page):
             page.update()
 
 
+    def language_change(e):
+        if drop.value == 'English':
+            page.locale_configuration.current_locale = ft.Locale("en", "US")
+            user_to_delete = db.get_query(User).filter(User.id == -1).one()
+            log = db.get_query(User.login).filter(User.id == -1).one()
+            pas = db.get_query(User.password).filter(User.id == -1).one()
+            ot = db.get_query(User.openai_token).filter(User.id == -1).one()
+            pv = db.get_query(User.picovoice_token).filter(User.id == -1).one()
+            et = db.get_query(User.eden_token).filter(User.id == -1).one()
+            db.delete(user_to_delete)
+            db.add(User(
+                id=-1,
+                login=log,
+                password=pas,
+                openai_token=ot,
+                picovoice_token=pv,
+                eden_token=et,
+                current_lang='en'
+            ))
 
-
-    def gpt_answer(e, mes, id):
-        if id == 0:
-            response = jarvis_object.main_connect(kaldi_rec=vosk.KaldiRecognizer(model, samplerate))
-            text = ''
-            for i in response:
-                text += str(i)
-        if id == 1:
-            response = gpt1(mes)
-            text = ''
-            for i in response:
-                text += str(i)
-        m = Message(user_name='SVET', message=text, message_type='chat_message')
-        #jarvis_object.tts(response)
-        chat.controls.append(m)
-        chat.update()
+        elif drop.value == 'Русский':
+            page.locale_configuration.current_locale = ft.Locale("ru", "RU")
+            user_to_delete = db.get_query(User).filter(User.id == -1).one()
+            log = db.get_query(User.login).filter(User.id == -1).one()
+            pas = db.get_query(User.password).filter(User.id == -1).one()
+            ot = db.get_query(User.openai_token).filter(User.id == -1).one()
+            pv = db.get_query(User.picovoice_token).filter(User.id == -1).one()
+            et = db.get_query(User.eden_token).filter(User.id == -1).one()
+            db.delete(user_to_delete)
+            db.add(User(
+                id=-1,
+                login=log,
+                password=pas,
+                openai_token=ot,
+                picovoice_token=pv,
+                eden_token=et,
+                current_lang='ru'
+            ))
+        else:
+            page.snack_bar = ft.SnackBar(ft.Text('First choose a language!'))
+            page.snack_bar.open = True
+            page.update()
         page.update()
 
 
-
-
-    # panel_jarvis = ft.Column([
-    # ft.Row([ft.Text('Диалоговая строка')], alignment=ft.MainAxisAlignment.CENTER),
-    # ft.Row([ft.Image(src='qt_material/clideo_editor_e88b8c1b9b3440159e1d616a8e862b5d.gif', width=450, height=450)], alignment=ft.MainAxisAlignment.CENTER),
-    # ft.Row([ft.Text('Джарвис', size=25)], alignment=ft.MainAxisAlignment.CENTER)
-    # ], alignment=ft.MainAxisAlignment.CENTER)
 
 
     back_ground_jarvis = ft.Container(
@@ -422,34 +466,65 @@ def start_settings(page: ft.Page):
     jarvis = ft.Container(ft.Text('Jarvis', size=35, color='blue'), height=800, width=1000,
                           alignment=ft.alignment.Alignment(0, 0.3))
 
-    start_btn = ft.Row([ft.Container(ft.ElevatedButton(text='Запуск', on_click=check_jarvis, bgcolor=ft.colors.BLUE_300,
+    start_btn_en = ft.Row([ft.Container(ft.ElevatedButton(text='Start', on_click=check_jarvis, bgcolor=ft.colors.BLUE_300,
                                                        color='black', height=70, width=200), height=800, width=1000,
                                      alignment=ft.alignment.Alignment(1.1, 0.7))])
-    ask_gpt_btn = ft.Row([ft.Container(ft.ElevatedButton(text='GPT', on_click=gpt_answer,bgcolor=ft.colors.BLUE_300,
+    start_btn_ru = ft.Row(
+        [ft.Container(ft.ElevatedButton(text='Запуск', on_click=check_jarvis, bgcolor=ft.colors.BLUE_300,
+                                        color='black', height=70, width=200), height=800, width=1000,
+                      alignment=ft.alignment.Alignment(1.1, 0.7))])
+    '''ask_gpt_btn = ft.Row([ft.Container(ft.ElevatedButton(text='GPT', on_click=gpt_answer,bgcolor=ft.colors.BLUE_300,
                                                        color='black', height=70, width=200), height=800, width=1000,
-                                     alignment=ft.alignment.Alignment(1.1, 1.0))])
+                                     alignment=ft.alignment.Alignment(1.1, 1.0))])'''
 
     jarvis_st = ft.Row([ft.Column([ft.Stack([
         back_ground_jarvis,
         eye_jarvis,
-        #start_btn,
-        ask_gpt_btn
-                                ])]
+        start_btn_en,
+        ])]
                                   )])
 
-    sett = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([
+    drop = ft.Dropdown(width=300,
+                       options=[
+                           ft.dropdown.Option("English"),
+                           ft.dropdown.Option('Русский')
+                       ])
+    lang_ch_btn_en = ft.ElevatedButton(text='Save', width=300, on_click=language_change)
+    lang_ch_btn_ru = ft.ElevatedButton(text='Сохранить', width=300, on_click=language_change)
+
+
+    sett_en = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([
         ft.Image(f'{CDIR}/assets/qt_material/photo1718366319.jpeg', width=300, height=300),
-                    ft.Text('Настройки', size=25),
-                    user_login,
-                    user_password,
+                    ft.Text("Language", size=25),
+                    drop,
+                    lang_ch_btn_en,
+                    ft.Text('Settings', size=25),
+                    user_login_en,
+                    user_password_en,
                     picovoice_token,
                     edenai_token,
-                    set_but,
-                    quit_btn], alignment=ft.alignment.center_right)], alignment=ft.MainAxisAlignment.CENTER))
-    panel_settings = ft.Container(
+                    set_but_en,
+                    quit_btn_en], alignment=ft.alignment.center_right)], alignment=ft.MainAxisAlignment.CENTER))
+    sett_ru = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([
+        ft.Image(f'{CDIR}/assets/qt_material/photo1718366319.jpeg', width=300, height=300),
+        ft.Text("Язык", size=25),
+        drop,
+        lang_ch_btn_en,
+        ft.Text('Настройки', size=25),
+        user_login_ru,
+        user_password_ru,
+        picovoice_token,
+        edenai_token,
+        set_but_ru,
+        quit_btn_ru], alignment=ft.alignment.center_right)], alignment=ft.MainAxisAlignment.CENTER))
+    panel_settings_en = ft.Container(
         ft.Stack([
             ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
-            sett]), alignment=ft.Alignment(1.0,1.0))
+            sett_en]), alignment=ft.Alignment(1.0,1.0))
+    panel_settings_ru = ft.Container(
+        ft.Stack([
+            ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
+            sett_ru]), alignment=ft.Alignment(1.0, 1.0))
 
     svet = ft.Container(width=2100, height=1200, content=ft.Row([ft.Column([
         ft.Image(f'{CDIR}/assets/qt_material/msg1032980595-187354.png',
@@ -460,12 +535,19 @@ def start_settings(page: ft.Page):
                                  height=800, width=1000, alignment=ft.alignment.Alignment(0.98, 0.37))])
 
 
-    panel_svet = ft.Container(
+    panel_svet_en = ft.Container(
         ft.Stack([
             ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
             svet,
-            start_btn
+            start_btn_en
         ]), alignment=ft.Alignment(1,1)
+    )
+    panel_svet_ru = ft.Container(
+        ft.Stack([
+            ft.Image(src=f'{CDIR}/assets/qt_material/city.jpg', height=1300, width=2200),
+            svet,
+            start_btn_ru
+        ]), alignment=ft.Alignment(1, 1)
     )
 
 
@@ -473,14 +555,14 @@ def start_settings(page: ft.Page):
 
     # command = ft.Container(ft.Text('Команды', size=25),height=800, width=1000, alignment=ft.alignment.Alignment(0, -1))
     list_commands = ft.Container(ft.Column([
-        ft.Row([ft.Text('Отключение Джарвиса: отключение, пора спать и т.п.', size=15)],
+        ft.Row([ft.Text("Disabling SVET: disconnecting, it's time to sleep, etc.", size=15)],
                alignment=ft.MainAxisAlignment.CENTER),
-        ft.Row([ft.Text('Браузер: открой браузер, гугл хром и т.п.', size=15)], alignment=ft.MainAxisAlignment.CENTER),
-        ft.Row([ft.Text('Открытие сайтов: открой ютуб/вк/телеграм/гугл', size=15)],
+        ft.Row([ft.Text('Browser: open the browser, Google chrome, etc.', size=15)], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([ft.Text('Opening websites: open YouTube/vk/telegram/Google', size=15)],
                alignment=ft.MainAxisAlignment.CENTER),
-        ft.Row([ft.Text('Включение звука: включи звук, верни звук, режим со звуком', size=15)],
+        ft.Row([ft.Text('Turn on the sound: turn on the sound, turn on the sound, sound mode', size=15)],
                alignment=ft.MainAxisAlignment.CENTER),
-        ft.Row([ft.Text('Отключение звука: выключи звук, беззвучный режим, режим без звука', size=15)],
+        ft.Row([ft.Text('Mute: mute, silent mode, mute mode', size=15)],
                alignment=ft.MainAxisAlignment.CENTER),
         ft.Row([ft.Text('Смена устройста: перейди на наушники/динамики, звук на наушники/динамики и т.п.', size=15)],
                alignment=ft.MainAxisAlignment.CENTER),
@@ -601,25 +683,37 @@ def start_settings(page: ft.Page):
         EDEN_TOKEN = user.eden_token
 
         jarvis_object = Jarvis(picovoice_token=PICOVOICE_TOKEN, eden_token=EDEN_TOKEN)
+        if user.current_lang == 'en':
+            page.add(panel_svet_en)
+            page.navigation_bar = ft.NavigationBar(
+                destinations=[
+                    ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Settings'),
+                    ft.NavigationDestination(icon=ft.icons.WECHAT, label='SVET'),
+                    # ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
+                    ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
+                ], on_change=navigate
+            )
+            page.update()
+        else:
+            page.add(panel_svet_ru)
+            page.navigation_bar = ft.NavigationBar(
+                destinations=[
+                    ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Настройки'),
+                    ft.NavigationDestination(icon=ft.icons.WECHAT, label='SVET'),
+                    # ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
+                    ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
+                ], on_change=navigate
+            )
+            page.update()
 
-        page.add(panel_svet)
 
-        page.navigation_bar = ft.NavigationBar(
-            destinations=[
-                ft.NavigationDestination(icon=ft.icons.SETTINGS, label='Настройки'),
-                ft.NavigationDestination(icon=ft.icons.WECHAT, label='SVET'),
-                ft.NavigationDestination(icon=ft.icons.KEYBOARD_COMMAND_KEY, label='Команды'),
-                ft.NavigationDestination(icon=ft.icons.CHAT, label='ChatGPT')
-            ], on_change=navigate
-        )
-        page.update()
 
     else:
         page.add(panel_register)
         page.navigation_bar = ft.NavigationBar(
             destinations=[
-                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER, label='Регистрация'),
-                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER_OUTLINED, label='Авторизация')
+                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER, label='Registration'),
+                ft.NavigationDestination(icon=ft.icons.VERIFIED_USER_OUTLINED, label='Authorization')
             ], on_change=navigate_reg
         )
         page.update()
@@ -650,8 +744,10 @@ def start_settings(page: ft.Page):
 
 
 
-
-    model = vosk.Model("assets/model_small")
+    #if user.current_lang == 'ru':
+    #    model = vosk.Model("assets/model_small")
+    #else:
+    model = vosk.Model("assets/vosk-model-small-en-us-0.15")
     samplerate = 16000
     device = -1
     q = queue.Queue()
